@@ -310,3 +310,6 @@ Else
 
 Remove-Item $Env:WAZUH_BACKUP_DIR -recurse -ErrorAction SilentlyContinue
 Remove-Item -Path ".\upgrade\*"  -Exclude "*.log", "upgrade_result" -ErrorAction SilentlyContinue
+
+# Rebuild windows explorer icons cache
+cmd /c "C:\Windows\System32\ie4uinit.exe -Show"
