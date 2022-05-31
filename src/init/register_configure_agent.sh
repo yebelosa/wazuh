@@ -53,7 +53,7 @@ edit_value_tag() {
             unix_sed "s#<$1>.*</$1>#<$1>$2</$1>#g" "${file}"
         fi
     fi
-    
+
     if [ "$?" != "0" ]; then
         echo "$(date '+%Y/%m/%d %H:%M:%S') agent-auth: Error updating $2 with variable $1." >> ${INSTALLDIR}/logs/ossec.log
     fi
@@ -105,7 +105,9 @@ add_adress_block() {
     if [ "${use_unix_sed}" = "False" ] ; then
         ${sed} "/<client>/r ${TMP_SERVER}" ${CONF_FILE}
     else
-        unix_sed "/<client>/r ${TMP_SERVER}" ${CONF_FILE}
+        line=$(grep -n '<config-profile>' ${CONF_FILE} | cut -d ":" -f 1)
+        { head -n $(($line-1)) ${CONF_FILE}; cat "${TMP_SERVER}"; tail -n +$line ${CONF_FILE}; } > "${CONF_FILE}2"
+        mv "${CONF_FILE}2" ${CONF_FILE}
     fi
 
     rm -f ${TMP_SERVER}
@@ -232,7 +234,9 @@ concat_conf() {
     if [ "${use_unix_sed}" = "False" ] ; then
         ${sed} "/<\/crypto_method>/r ${TMP_ENROLLMENT}" ${CONF_FILE}
     else
-        unix_sed "/<\/crypto_method>/r ${TMP_ENROLLMENT}/" ${CONF_FILE}
+        line=$(grep -n '</client>' ${INSTALLDIR}/etc/ossec.conf | cut -d ":" -f 1)
+        { head -n $(($line-1)) ${INSTALLDIR}/etc/ossec.conf; cat "${TMP_ENROLLMENT}"; tail -n +$line ${INSTALLDIR}/etc/ossec.conf; } > ${INSTALLDIR}/etc/ossec.conf2
+        mv ${INSTALLDIR}/etc/ossec.conf2 ${INSTALLDIR}/etc/ossec.conf
     fi
 
     rm -f ${TMP_ENROLLMENT}
@@ -278,7 +282,7 @@ main () {
         concat_conf
     fi
 
-            
+
     if [ ! -z ${WAZUH_REGISTRATION_PASSWORD} ]; then
         echo ${WAZUH_REGISTRATION_PASSWORD} > "${INSTALLDIR}/etc/authd.pass"
     fi
