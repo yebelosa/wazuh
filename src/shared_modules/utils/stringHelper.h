@@ -256,6 +256,7 @@ namespace Utils
 
         return str;
     }
+
     static bool findRegexInString(const std::string& in,
                                   std::string& match,
                                   const std::regex& pattern,
@@ -277,6 +278,11 @@ namespace Utils
 
         return ret;
     }
+}
+
+static bool isNumber(const std::string& str)
+{
+    return !str.empty() && std::string::npos == str.find_first_not_of("0123456789");
 }
 
 #pragma GCC diagnostic pop
