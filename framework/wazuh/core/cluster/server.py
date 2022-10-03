@@ -176,13 +176,15 @@ class AbstractServerHandler(c_common.Handler):
         """
         if self.name:
             if exc is None:
-                self.logger.debug("Disconnected.".format(self.name))
+                self.logger.info(f"Disconnected {self.name}.")
             else:
                 self.logger.error(f"Error during connection with '{self.name}': {exc}.\n"
                                   f"{''.join(traceback.format_tb(exc.__traceback__))}")
 
+            self.logger.info(f"Clients: {self.server.clients} | Self.name: {self.name}.")
             if self.name in self.server.clients:
                 del self.server.clients[self.name]
+                self.logger.info(f"Deleted {self.name}.")
         else:
             if exc is not None:
                 self.logger.error(f"Error during handshake with incoming connection: {exc}", exc_info=True)
@@ -346,6 +348,7 @@ class AbstractServer:
                     keep_alive_logger.error("No keep alives have been received from {} in the last minute. "
                                             "Disconnecting".format(client_name))
                     client.transport.close()
+                    keep_alive_logger.info(f"Closed connection with {client_name}: {client.transport.is_closed()}")
             keep_alive_logger.debug("Calculated.")
             await asyncio.sleep(self.cluster_items['intervals']['master']['check_worker_lastkeepalive'])
 

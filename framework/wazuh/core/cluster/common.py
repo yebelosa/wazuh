@@ -429,8 +429,10 @@ class Handler(asyncio.Protocol):
                     decrypted_payload = self.my_fernet.decrypt(bytes(self.in_msg.payload)) if self.my_fernet is not \
                         None and not self.in_msg.flag_divided and self.in_msg.counter not in self.div_msg_box \
                         else bytes(self.in_msg.payload)
-                except cryptography.fernet.InvalidToken:
-                    raise exception.WazuhClusterError(3025)
+                except cryptography.fernet.InvalidToken as e:
+                    raise exception.WazuhClusterError(
+                        3025, extra_message=f"Error: {e} 1| COUNTER: {self.in_msg.counter} | TOTAL: {self.in_msg.total} | "
+                                            f"CMD: {self.in_msg.cmd} | PAYLOAD: {self.in_msg.payload}")
                 yield self.in_msg.cmd, self.in_msg.counter, decrypted_payload, self.in_msg.flag_divided
                 self.in_msg = InBuffer()
             else:
