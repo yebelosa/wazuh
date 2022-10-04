@@ -472,7 +472,7 @@ class MasterHandler(server.AbstractServerHandler, c_common.WazuhCommon):
             Response message.
         """
         if sync_type == b'syn_i_w_m':
-            self.sync_integrity_free, sync_function = [False, datetime.utcnow()], ReceiveIntegrityTask
+            self.sync_integrity_free, sync_function = [True, datetime.utcnow()], ReceiveIntegrityTask
         elif sync_type == b'syn_e_w_m':
             sync_function = ReceiveExtraValidTask
         elif sync_type == b'syn_a_w_m':
@@ -652,8 +652,11 @@ class MasterHandler(server.AbstractServerHandler, c_common.WazuhCommon):
         logger.info(f"Starting.")
 
         logger.debug("Waiting to receive zip file from worker.")
-        await asyncio.wait_for(received_file.wait(),
-                               timeout=self.cluster_items['intervals']['communication']['timeout_receiving_file'])
+        try:
+            await asyncio.wait_for(received_file.wait(),
+                                   timeout=self.cluster_items['intervals']['communication']['timeout_receiving_file'])
+        except Exception as e:
+            raise exception.WazuhException(1000)
 
         # Full path where the zip sent by the worker is located.
         received_filename = self.sync_tasks[task_id].filename
