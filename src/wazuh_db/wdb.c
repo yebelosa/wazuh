@@ -957,7 +957,7 @@ void wdb_commit_old() {
             wdb_commit2(node);
             gettime(&ts_end);
 
-            mdebug2("Agent '%s' database commited. Time: %.3f ms.", node->id, time_diff(&ts_start, &ts_end) * 1e3);
+            minfo("Agent '%s' database commited. Time: %.3f ms.", node->id, time_diff(&ts_start, &ts_end) * 1e3);
         }
 
         w_mutex_unlock(&node->mutex);
