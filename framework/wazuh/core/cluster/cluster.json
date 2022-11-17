@@ -92,8 +92,8 @@
 
     "intervals":{
         "worker": {
-            "sync_integrity": 3,
-            "sync_agent_info": 2,
+            "sync_integrity": 9,
+            "sync_agent_info": 10,
             "sync_agent_info_ko_retry": 1,
             "keep_alive": 60,
             "connection_retry": 10,
@@ -103,7 +103,7 @@
         "master": {
             "process_pool_size": 2,
             "timeout_extra_valid": 40,
-            "recalculate_integrity": 2,
+            "recalculate_integrity": 8,
             "timeout_agent_info": 40,
             "check_worker_lastkeepalive": 60,
             "max_allowed_time_without_keepalive": 120,
