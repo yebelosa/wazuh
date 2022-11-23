@@ -310,7 +310,7 @@ void configureSubcommandKvdb(std::shared_ptr<CLI::App> app)
     // KVDB get subcommand
     auto get_subcommand = kvdb->add_subcommand(
         args::SUBCOMMAND_KVDB_GET,
-        "gets key or key and value (if possible) of a DB named db-name.");
+        "get -k [key]: Gets key or key and value (if possible) of a DB named db-name.");
     // get kvdb name
     get_subcommand->add_option("-n, --name", args::kvdb_name, "KVDB name to be queried.")
         ->required();
@@ -319,7 +319,9 @@ void configureSubcommandKvdb(std::shared_ptr<CLI::App> app)
         ->required();
 
     // KVDB insert subcommand
-    auto insert_subcommand = kvdb->add_subcommand(args::SUBCOMMAND_KVDB_INSERT,"NA.");
+    auto insert_subcommand = kvdb->add_subcommand(
+        args::SUBCOMMAND_KVDB_INSERT,
+        "insert -n [db-name] -k [key] -v [value]: Inserts key or key value into db-name.");
     // insert kvdb name
     insert_subcommand->add_option("-n, --name", args::kvdb_name, "KVDB name to be queried.")
         ->required();
@@ -331,7 +333,9 @@ void configureSubcommandKvdb(std::shared_ptr<CLI::App> app)
         ->default_val("");
 
     // KVDB remove subcommand
-    auto remove_subcommand = kvdb->add_subcommand(args::SUBCOMMAND_KVDB_REMOVE,"NA.");
+    auto remove_subcommand =
+        kvdb->add_subcommand(args::SUBCOMMAND_KVDB_REMOVE,
+                             "remove -n [db-name] -k [key]: Removes key from db-name.");
     // remove kvdb name
     remove_subcommand->add_option("-n, --name", args::kvdb_name, "KVDB name to be queried.")
         ->required();
