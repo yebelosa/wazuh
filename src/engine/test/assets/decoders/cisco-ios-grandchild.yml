@@ -1,7 +1,7 @@
 ---
 name: decoder/cisco-ios-grandchild/0
 
-parents:
+sources:
   # TODO: Should has a list of parents
   # - cisco-ios-sec-login
   - decoder/cisco-ios-sec/0
@@ -19,5 +19,5 @@ check:
 normalize:
   - map:
       - network.type: +s_ip_version/$source.ip
-      - related.ip: +s_append/$source.ip/$destination.ip
-      - tags: +s_append/cisco-ios
+      - related.ip: +a_append/$source.ip/$destination.ip
+      - tags: +a_append/cisco-ios

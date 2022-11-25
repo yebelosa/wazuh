@@ -1,12 +1,12 @@
 name: decoder/suricata-stats/0
-parents:
+sources:
   - decoder/suricata/0
 
 metadata:
   description: suricata-stats
 
 check:
-  - _json.event_type: stats
+  - ~json.event_type: stats
 
 normalize:
   - map:

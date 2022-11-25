@@ -1,7 +1,7 @@
 ---
 name: decoder/cisco/0
 
-parents:
+sources:
   - decoder/syslog-queue/0
 
 metadata:
@@ -22,17 +22,17 @@ parse:
     # Parse header only (IOS and ASA)
 
     # "Jul 10 10:11:12.321: %LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/1, changed state to up"
-    - event.original: '<timestamp/SYSLOG>.<_/number>: %<cisco.ios.facility>-<event.severity>-<event.code>: <message>'
+    - event.original: '<~timestamp/timestamp/SYSLOG>.<~/number>: %<~cisco.ios.facility>-<event.severity>-<event.code>: <message>'
 
     # Jul  10 11:12:13: %SYS-5-CONFIG_I: Configured from console by vty2 (101.222.8.69)
-    - event.original: '<timestamp/SYSLOG>: %<cisco.ios.facility>-<event.severity>-<event.code>: <message>'
+    - event.original: '<~timestamp/timestamp/SYSLOG>: %<~cisco.ios.facility>-<event.severity>-<event.code>: <message>'
 
     # "01:02:03: %LINK-3-UPDOWN: Interface Port-channel1, changed state to up"
     # "01:02:03: %SYS-5-CONFIG_I: Configured from console by vty2 (101.222.8.69)"
-    - event.original: '<timestamp/24H_LOCALTIME>: %<cisco.ios.facility>-<event.severity>-<event.code>: <message>'
+    - event.original: '<~timestamp/timestamp/24H_LOCALTIME>: %<~cisco.ios.facility>-<event.severity>-<event.code>: <message>'
 
     # Jul  10 11:12:13.321 UTC: %SYS-5-CONFIG_I: Configured from console by vty2 (101.222.8.69)
-    - event.original: '<timestamp/RFC3154_ID_TIMEZONE>: %<cisco.ios.facility>-<event.severity>-<event.code>: <message>'
+    - event.original: '<~timestamp/timestamp/RFC3154_ID_TIMEZONE>: %<~cisco.ios.facility>-<event.severity>-<event.code>: <message>'
 
 normalize:
   - map:

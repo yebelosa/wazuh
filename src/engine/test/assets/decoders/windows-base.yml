@@ -3,23 +3,23 @@ name: decoder/windows-base/0
 metadata:
   description: "Windows base decoder"
 
-parents:
+sources:
   - decoder/json/0
 
 check:
-  - _json.Message: +ef_exists
-  - _json.Event: +ef_exists
+  - ~json.Message: +ef_exists
+  - ~json.Event: +ef_exists
 
 parse:
   logpar:
-    - _json.Event: <_winlog/xml/windows>
+    - ~json.Event: <~winlog/xml/windows>
 
 normalize:
   - map:
       # Base mapping, delete duplicated fields
-      - winlog: $_winlog.Event
-      - _winlog: +ef_delete
-      - _json: +ef_delete
+      - winlog: $~winlog.Event
+      - ~winlog: +ef_delete
+      - ~json: +ef_delete
       - winlog.event_data: +ef_rename/$winlog.EventData
 
       # Normalize System fields

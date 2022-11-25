@@ -6,4 +6,4 @@ check:
 
 parse:
   logpar:
-    - event.original: <_json/json>
+    - event.original: <~json/json>

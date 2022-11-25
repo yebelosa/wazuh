@@ -1,7 +1,7 @@
 ---
 name: decoder/cisco-ios-sec/0
 
-parents:
+sources:
   - decoder/cisco/0
 
 metadata:
@@ -16,8 +16,8 @@ metadata:
     - https://tools.cisco.com/security/center/resources/access_control_list_logging.html"
 
 check: >-
-  cisco.ios.facility==SEC
-  OR (cisco.ios.facility==IPV6 AND event.code==ACCESSLOGP)
+  ~cisco.ios.facility==SEC
+  OR (~cisco.ios.facility==IPV6 AND event.code==ACCESSLOGP)
 
 parse:
   logpar:
@@ -25,46 +25,46 @@ parse:
     # %SEC-6-IPACCESSLOGP: list ACL-IPv4-E0/0-IN permitted tcp 192.10.20.30(6969) -> 192.11.22.33(22), 1 packet
     # %SEC-6-IPACCESSLOGP: list ACL-IPv4-E0/0-IN permitted tcp 192.10.20.30(6969) -> 192.11.22.33(22), 9 packets
     - message: >-
-        list <cisco.ios.access_list> <_outcome> <network.transport> <source.address>(<source.port>) -> <destination.ip>(<destination.port>), <network.packets> packet
+        list <~cisco.ios.access_list> <~outcome> <network.transport> <source.address>(<source.port>) -> <destination.ip>(<destination.port>), <network.packets> packet
 
     # Feb  8 04:00:47.272: %SEC-6-IPACCESSLOGRP: list 177 denied igmp 198.51.100.197 -> 224.0.0.22, 1 packet
     - message: >-
-          list <cisco.ios.access_list> <_outcome> <network.transport> <source.address> -> <destination.ip>, <network.packets> packet
+          list <~cisco.ios.access_list> <~outcome> <network.transport> <source.address> -> <destination.ip>, <network.packets> packet
 
     # %SEC-6-IPACCESSLOGP: list ACL-IPv4-E0/0-IN permitted tcp 192.10.20.30(6969) (Ethernet0/0 507a.bebe.600b) -> 192.11.22.33(22), 1 packet
     # %SEC-6-IPACCESSLOGP: list ACL-IPv4-E0/0-IN permitted tcp 192.10.20.30(6969) (Ethernet0/0 507a.bebe.600b) -> 192.11.22.33(22), 9 packets
     - message: >-
-        list <cisco.ios.access_list> <_outcome> <network.transport> <source.address>(<source.port>) (<observer.ingress.interface.name> <_observer.ingress.interface.mac>) -> <destination.ip>(<destination.port>), <network.packets> packet
+        list <~cisco.ios.access_list> <~outcome> <network.transport> <source.address>(<source.port>) (<~observer.ingress.interface.name> <~observer.ingress.interface.mac>) -> <destination.ip>(<destination.port>), <network.packets> packet
 
     # %SEC-6-IPACCESSLOGSP: list INBOUND-ON-F11 denied igmp 192.10.20.30 -> 192.11.22.33 (20), 1 packet
     - message: >-
-        list <cisco.ios.access_list> <_outcome> <network.transport> <source.address> -> <destination.ip> (<_igmp_type>), <network.packets> packet
+        list <~cisco.ios.access_list> <~outcome> <network.transport> <source.address> -> <destination.ip> (<~igmp_type>), <network.packets> packet
 
 normalize:
   - map:
       - source.ip: $source.address
       - event.category: [ network ]
       - event.type: [ connection, firewall ]
-      - tags: +s_append/forwarded
+      - tags: +a_append/forwarded
 
   - check:
       - network.transport: igmp
     map:
-      - igmp.type: $_igmp_type
+      - ~igmp.type: $~igmp_type
 
 
   - check: >-
-      +ef_exists/_outcome AND (
-      _outcome==est-allowed
-      OR _outcome==permitted
-      OR _outcome==allow
+      +ef_exists/~outcome AND (
+      ~outcome==est-allowed
+      OR ~outcome==permitted
+      OR ~outcome==allow
       )
     map:
       - event.outcome: allowed
 
   - check:
-      +ef_exists/_outcome AND (
-      _outcome==deny
-      OR _outcome==Deny)
+      +ef_exists/~outcome AND (
+      ~outcome==deny
+      OR ~outcome==Deny)
     map:
       - event.outcome: denied

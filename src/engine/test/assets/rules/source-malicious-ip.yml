@@ -9,4 +9,4 @@ normalize:
       rule.id: "source-malicious-ip"
       rule.author: "Wazuh"
       rule.description: "Detected malicious IP activity from source"
-      _threat.indicator.ip: $source.ip
+      ~threat.indicator.ip: $source.ip

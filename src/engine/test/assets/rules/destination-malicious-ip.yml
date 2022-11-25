@@ -9,4 +9,4 @@ normalize:
       rule.id: "destination-malicious-ip"
       rule.author: "Wazuh"
       rule.description: "Detected malicious IP activity from destination"
-      _threat.indicator.ip: $destination.ip
+      ~threat.indicator.ip: $destination.ip

@@ -8,10 +8,10 @@ metadata:
   product.name: auditd
 
 definitions:
-  TYPE_FIELD: type=<_log.record_type>
-  NODE_FIELD: node=<_node>
-  LOG_EPOCH: <_log.epoch>
-  LOG_SEQUENCE: <auditd.log.sequence>
+  TYPE_FIELD: type=<~log.record_type>
+  NODE_FIELD: node=<~node>
+  LOG_EPOCH: <~log.epoch>
+  LOG_SEQUENCE: <~auditd.log.sequence>
   EPOCH_SEQ_FIELD: "($LOG_EPOCH:$LOG_SEQUENCE):"
   MSG_FIELD: msg=audit$EPOCH_SEQ_FIELD
 
@@ -33,120 +33,120 @@ parse:
   logpar:
     # Logs that start with "type="
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD <_log.msg>
-        old auid=<auditd.log.old_auid> new auid=<auditd.log.new_auid>
-        old ses=<auditd.log.old_ses> new ses=<auditd.log.new_ses>
+        $TYPE_FIELD $MSG_FIELD <~log.msg>
+        old auid=<~auditd.log.old_auid> new auid=<~auditd.log.new_auid>
+        old ses=<~auditd.log.old_ses> new ses=<~auditd.log.new_ses>
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD <_log.msg/quoted/ / msg=><_log.sub_msg/quoted/' /'>
+        $TYPE_FIELD $MSG_FIELD <~log.msg/quoted/ / msg=><~log.sub_msg/quoted/' /'>
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD <_log.msg/quoted/ / msg=><_log.sub_msg/quoted/" /">
+        $TYPE_FIELD $MSG_FIELD <~log.msg/quoted/ / msg=><~log.sub_msg/quoted/" /">
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD<_log.msg/quoted/ / msg=><_log.sub_msg/quoted/' /'>
+        $TYPE_FIELD $MSG_FIELD<~log.msg/quoted/ / msg=><~log.sub_msg/quoted/' /'>
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD<_log.msg/quoted/ / msg=><_log.sub_msg/quoted/" /">
+        $TYPE_FIELD $MSG_FIELD<~log.msg/quoted/ / msg=><~log.sub_msg/quoted/" /">
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD <_log.msg/quoted/ / msg=><_log.sub_msg/quoted/'/'>
+        $TYPE_FIELD $MSG_FIELD <~log.msg/quoted/ / msg=><~log.sub_msg/quoted/'/'>
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD <_log.msg/quoted/ / msg=><_log.sub_msg/quoted/"/">
+        $TYPE_FIELD $MSG_FIELD <~log.msg/quoted/ / msg=><~log.sub_msg/quoted/"/">
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD<_log.msg/quoted/ / msg=><_log.sub_msg/quoted/'/'>
+        $TYPE_FIELD $MSG_FIELD<~log.msg/quoted/ / msg=><~log.sub_msg/quoted/'/'>
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD<_log.msg/quoted/ / msg=><_log.sub_msg/quoted/"/">
+        $TYPE_FIELD $MSG_FIELD<~log.msg/quoted/ / msg=><~log.sub_msg/quoted/"/">
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD <_avc/quoted/avc:/for > <_log.msg>
+        $TYPE_FIELD $MSG_FIELD <~avc/quoted/avc:/for > <~log.msg>
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD <_avc/quoted/avc:/for ><_log.msg>
+        $TYPE_FIELD $MSG_FIELD <~avc/quoted/avc:/for ><~log.msg>
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD tty <_log.msg>
+        $TYPE_FIELD $MSG_FIELD tty <~log.msg>
 
     - event.original: >-
-        $TYPE_FIELD $MSG_FIELD <_log.msg>
+        $TYPE_FIELD $MSG_FIELD <~log.msg>
 
     - event.original: >-
         $TYPE_FIELD $MSG_FIELD
 
     # Logs that start with "node="
     - event.original: >-
-        $NODE_FIELD $TYPE_FIELD $MSG_FIELD <_log.msg>
-        old auid=<auditd.log.old_auid> new auid=<auditd.log.new_auid>
-        old ses=<auditd.log.old_ses> new ses=<auditd.log.new_ses>
+        $NODE_FIELD $TYPE_FIELD $MSG_FIELD <~log.msg>
+        old auid=<~auditd.log.old_auid> new auid=<~auditd.log.new_auid>
+        old ses=<~auditd.log.old_ses> new ses=<~auditd.log.new_ses>
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD
-        $MSG_FIELD <_log.msg/quoted/ / msg=><_log.sub_msg/quoted/' /'>
+        $MSG_FIELD <~log.msg/quoted/ / msg=><~log.sub_msg/quoted/' /'>
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD
-        $MSG_FIELD <_log.msg/quoted/ / msg=><_log.sub_msg/quoted/" /">
+        $MSG_FIELD <~log.msg/quoted/ / msg=><~log.sub_msg/quoted/" /">
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD
-        $MSG_FIELD<_log.msg/quoted/ / msg=><_log.sub_msg/quoted/' /'>
+        $MSG_FIELD<~log.msg/quoted/ / msg=><~log.sub_msg/quoted/' /'>
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD
-        $MSG_FIELD<_log.msg/quoted/ / msg=><_log.sub_msg/quoted/" /">
+        $MSG_FIELD<~log.msg/quoted/ / msg=><~log.sub_msg/quoted/" /">
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD
-        $MSG_FIELD <_log.msg/quoted/ / msg=><_log.sub_msg/quoted/'/'>
+        $MSG_FIELD <~log.msg/quoted/ / msg=><~log.sub_msg/quoted/'/'>
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD
-        $MSG_FIELD <_log.msg/quoted/ / msg=><_log.sub_msg/quoted/"/">
+        $MSG_FIELD <~log.msg/quoted/ / msg=><~log.sub_msg/quoted/"/">
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD
-        $MSG_FIELD<_log.msg/quoted/ / msg=><_log.sub_msg/quoted/'/'>
+        $MSG_FIELD<~log.msg/quoted/ / msg=><~log.sub_msg/quoted/'/'>
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD
-        $MSG_FIELD<_log.msg/quoted/ / msg=><_log.sub_msg/quoted/"/">
+        $MSG_FIELD<~log.msg/quoted/ / msg=><~log.sub_msg/quoted/"/">
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD
-        $MSG_FIELD <_avc/quoted/avc:/for > <_log.msg>
+        $MSG_FIELD <~avc/quoted/avc:/for > <~log.msg>
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD
-        $MSG_FIELD <_avc/quoted/avc:/for ><_log.msg>
+        $MSG_FIELD <~avc/quoted/avc:/for ><~log.msg>
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD
-        $MSG_FIELD tty <_log.msg>
+        $MSG_FIELD tty <~log.msg>
 
     - event.original: >-
-        $NODE_FIELD $TYPE_FIELD $MSG_FIELD <_log.msg>
+        $NODE_FIELD $TYPE_FIELD $MSG_FIELD <~log.msg>
 
     - event.original: >-
         $NODE_FIELD $TYPE_FIELD $MSG_FIELD
 
 normalize:
   - check:
-      - _log.msg: +ef_exists
-      - _log.sub_msg: +ef_exists
+      - ~log.msg: +ef_exists
+      - ~log.sub_msg: +ef_exists
     map:
-      - _kv_msg: +s_concat/$_log.msg/ /$_log.sub_msg
+      - ~kv_msg: +s_concat/$~log.msg/ /$~log.sub_msg
 
   - check:
-      - _log.sub_msg: +ef_not_exists
-      - _log.msg: +ef_exists
+      - ~log.sub_msg: +ef_not_exists
+      - ~log.msg: +ef_exists
     map:
-      - _kv_msg: $_log.msg
+      - ~kv_msg: $~log.msg
 
   - map:
       - event.kind: event
-      - timestamp: $_log.epoch
-      - event.action: +s_lo/$_log.record_type
-      - wazuh.avc: +ef_rename/$_avc
+      - timestamp: $~log.epoch
+      - event.action: +s_lo/$~log.record_type
+      - wazuh.avc: +ef_rename/$~avc

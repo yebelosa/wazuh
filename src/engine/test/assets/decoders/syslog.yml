@@ -1,7 +1,7 @@
 ---
 name: decoder/syslog/0
 
-parents:
+sources:
   - decoder/syslog-queue/0
 
 metadata:
@@ -17,16 +17,16 @@ check:
 parse:
   logpar:
     # BSD Syslog RFC 3164 standard
-    - event.original: "<timestamp/SYSLOG> <host.hostname> <process.name>[<process.pid>]:<_/ignore/ ><message>"
+    - event.original: "<~timestamp/timestamp/SYSLOG> <host.hostname> <process.name>[<process.pid>]:<~/ignore/ ><message>"
     # BSD Syslog RFC 3164 no pid
-    - event.original: "<timestamp/SYSLOG> <host.hostname> <process.name>:<_/ignore/ ><message>"
+    - event.original: "<~timestamp/timestamp/SYSLOG> <host.hostname> <process.name>:<~/ignore/ ><message>"
 
     # BSD Syslog RFC 3164 standard ISO8601
-    - event.original: "<timestamp/ISO8601> <host.hostname> <process.name>[<process.pid>]: <message>"
+    - event.original: "<~timestamp/timestamp/ISO8601> <host.hostname> <process.name>[<process.pid>]: <message>"
     # BSD Syslog RFC 3164 no pid ISO8601
-    - event.original: "<timestamp/ISO8601> <host.hostname> <process.name>: <message>"
+    - event.original: "<~timestamp/timestamp/ISO8601> <host.hostname> <process.name>: <message>"
 
 normalize:
   - map:
       - event.kind: event
-      - related.hosts: +s_append/$host.hostname
+      - related.hosts: +a_append/$host.hostname
