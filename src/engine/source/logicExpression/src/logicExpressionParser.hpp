@@ -92,7 +92,7 @@ struct Token
         if (text.empty())
         {
             throw std::runtime_error(
-                "Got empty token while parsing a new Token");
+                "Engine logic expression parser: Got an empty token.");
         }
 
         if (text == "(")
@@ -127,10 +127,7 @@ struct Token
      * @return true if this token is an operator
      * @return false otherwise
      */
-    bool isOperator() const
-    {
-        return m_type >= OPERATOR_TOKEN_START;
-    }
+    bool isOperator() const { return m_type >= OPERATOR_TOKEN_START; }
 
     /**
      * @brief Check if this token is a unary operator
@@ -151,8 +148,8 @@ struct Token
      */
     bool isBinaryOperator() const
     {
-        return isOperator() && (m_type == TokenType::OPERATOR_OR ||
-                                m_type == TokenType::OPERATOR_AND);
+        return isOperator()
+               && (m_type == TokenType::OPERATOR_OR || m_type == TokenType::OPERATOR_AND);
     }
 
     /**
@@ -169,7 +166,8 @@ struct Token
         if (!isOperator() || !other.isOperator())
         {
             throw std::logic_error(fmt::format(
-                "Comparing precendence between non-operators: {} and {}",
+                "Engine logic expression parser: Comparing precendence between something "
+                "that is not an operator: Comparing \"{}\" and \"{}\".",
                 m_text,
                 other.m_text));
         }
@@ -182,10 +180,7 @@ struct Token
      *
      * @return std::string
      */
-    std::string toString() const
-    {
-        return m_text;
-    }
+    std::string toString() const { return m_text; }
 };
 
 /**
@@ -206,20 +201,14 @@ public:
      *
      * @return std::shared_ptr<Expression>
      */
-    std::shared_ptr<Expression> getPtr()
-    {
-        return shared_from_this();
-    }
+    std::shared_ptr<Expression> getPtr() { return shared_from_this(); }
 
     /**
      * @brief Get the const Ptr object
      *
      * @return std::shared_ptr<const Expression>
      */
-    std::shared_ptr<const Expression> getPtr() const
-    {
-        return shared_from_this();
-    }
+    std::shared_ptr<const Expression> getPtr() const { return shared_from_this(); }
 
     /**
      * @brief Create a new Expression object from a postfix token stack
@@ -229,8 +218,7 @@ public:
      * @throw std::logic_error if the stack is empty or contains an unbalanced
      * expression
      */
-    [[nodiscard]] static std::shared_ptr<Expression>
-    create(std::stack<Token>& postfix)
+    [[nodiscard]] static std::shared_ptr<Expression> create(std::stack<Token>& postfix)
     {
         return std::shared_ptr<Expression>(new Expression(postfix));
     }
@@ -274,8 +262,7 @@ public:
      * @param root root of the expression tree
      * @return std::string
      */
-    static std::string
-    toDotString(const std::shared_ptr<const Expression>& root)
+    static std::string toDotString(const std::shared_ptr<const Expression>& root)
     {
         // Not using visitPreOrder because we need to handle repeated names and
         // we need to now if current node is left or right child
@@ -329,17 +316,19 @@ private:
     {
         if (postfix.empty())
         {
-            throw std::logic_error("Got unbalanced expression");
+            throw std::logic_error(
+                "Engine logic expression parser: Got unbalanced expression.");
         }
         if (postfix.top().m_type == TokenType::ERROR_TYPE)
         {
-            throw std::logic_error("Got invalid token with [ERROR_TYPE]");
+            throw std::logic_error(
+                "Engine logic expression parser: Got invalid token with \"ERROR_TYPE\".");
         }
-        if (postfix.top().m_type == TokenType::PARENTHESIS_OPEN ||
-            postfix.top().m_type == TokenType::PARENTHESIS_CLOSE)
+        if (postfix.top().m_type == TokenType::PARENTHESIS_OPEN
+            || postfix.top().m_type == TokenType::PARENTHESIS_CLOSE)
         {
-            throw std::logic_error("Got invalid token with [PARENTHESIS_OPEN] "
-                                   "or [PARENTHESIS_CLOSE]");
+            throw std::logic_error("Engine logic expression parser: Got invalid token "
+                                   "with \"PARENTHESIS_OPEN\" or \"PARENTHESIS_CLOSE\".");
         }
 
         m_token = std::move(postfix.top());

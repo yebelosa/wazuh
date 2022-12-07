@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <fmt/format.h>
+
 #include "logicExpressionEvaluator.hpp"
 #include "logicExpressionParser.hpp"
 
@@ -32,9 +34,8 @@ std::function<bool(Event)> buildDijstraEvaluator(
     // visitor to generate an evaluator::Expression tree from a
     // parser::Expression tree and a term builder function.
     auto visit =
-        [termBuilder](
-            const std::shared_ptr<const parser::Expression>& tokenExpr,
-            auto& visit_ref) -> std::shared_ptr<evaluator::Expression<Event>>
+        [termBuilder](const std::shared_ptr<const parser::Expression>& tokenExpr,
+                      auto& visit_ref) -> std::shared_ptr<evaluator::Expression<Event>>
     {
         auto builtExpr = evaluator::Expression<Event>::create();
         switch (tokenExpr->m_token.m_type)
@@ -59,16 +60,16 @@ std::function<bool(Event)> buildDijstraEvaluator(
                 return builtExpr;
             default:
                 throw std::runtime_error(
-                    "Unexpected token type in parsed expression when building "
-                    "[buildDijstraEvaluator]");
+                    fmt::format("Engine logic expression: Unexpected token type of token "
+                                "\"{}\" in parsed expression.",
+                                tokenExpr->m_token.m_text));
         }
     };
 
     // Parse, build and return the evaluator function.
     auto tokenExpression = parser::parse(expression);
     auto builtExprPtr = visit(tokenExpression, visit);
-    auto evaluatorFunction =
-        evaluator::getDijstraEvaluator<Event>(builtExprPtr);
+    auto evaluatorFunction = evaluator::getDijstraEvaluator<Event>(builtExprPtr);
 
     return evaluatorFunction;
 }

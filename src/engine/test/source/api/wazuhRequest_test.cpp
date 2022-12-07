@@ -2,6 +2,7 @@
 
 #include <api/wazuhRequest.hpp>
 #include <json/json.hpp>
+#include <logging/logging.hpp>
 
 // A valid request
 const json::Json jrequest {R"({
@@ -29,11 +30,18 @@ TEST(WazuhRequest_validate, validRequest)
 TEST(WazuhRequest_validate, invalidVersion)
 {
     // Invalid Value
+    auto oldVersion {2};
     json::Json jrequest_invalid {jrequest};
-    jrequest_invalid.setInt(2, "/version");
+    jrequest_invalid.setInt(oldVersion, "/version");
     api::WazuhRequest wrequest {jrequest_invalid};
     EXPECT_TRUE(wrequest.error());
-    ASSERT_STREQ(wrequest.error()->c_str(), "The request version is not supported");
+    ASSERT_STREQ(
+        wrequest.error()->c_str(),
+        fmt::format(
+            "The request version ({}) is not supported, the supported version is {}",
+            oldVersion,
+            api::WazuhRequest::SUPPORTED_VERSION)
+            .c_str());
     ASSERT_FALSE(wrequest.isValid());
 }
 
@@ -46,7 +54,7 @@ TEST(WazuhRequest_validate, missingVersion)
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
     ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have a version field with an integer value");
+                 "The request must have a \"version\" field containing an integer value");
 }
 
 TEST(WazuhRequest_validate, wrongTypeVersion)
@@ -58,7 +66,7 @@ TEST(WazuhRequest_validate, wrongTypeVersion)
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
     ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have a version field with an integer value");
+                 "The request must have a \"version\" field containing an integer value");
 }
 
 TEST(WazuhRequest_validate, invalidCommandType)
@@ -70,7 +78,7 @@ TEST(WazuhRequest_validate, invalidCommandType)
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
     ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have a command field with a string value");
+                 "The request must have a \"command\" field containing a string value");
 }
 
 TEST(WazuhRequest_validate, missingCommand)
@@ -82,7 +90,7 @@ TEST(WazuhRequest_validate, missingCommand)
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
     ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have a command field with a string value");
+                 "The request must have a \"command\" field containing a string value");
 }
 
 TEST(WazuhRequest_validate, invalidParametersType)
@@ -93,8 +101,9 @@ TEST(WazuhRequest_validate, invalidParametersType)
     auto wrequest = api::WazuhRequest {jrequest_invalid};
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
-    ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have a parameters field with a JSON object value");
+    ASSERT_STREQ(
+        wrequest.error()->c_str(),
+        "The request must have a \"parameters\" field containing a JSON object value");
 }
 
 TEST(WazuhRequest_validate, missingParameters)
@@ -105,8 +114,9 @@ TEST(WazuhRequest_validate, missingParameters)
     auto wrequest = api::WazuhRequest {jrequest_invalid};
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
-    ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have a parameters field with a JSON object value");
+    ASSERT_STREQ(
+        wrequest.error()->c_str(),
+        "The request must have a \"parameters\" field containing a JSON object value");
 }
 
 TEST(WazuhRequest_validate, invalidOriginType)
@@ -117,8 +127,9 @@ TEST(WazuhRequest_validate, invalidOriginType)
     auto wrequest = api::WazuhRequest {jrequest_invalid};
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
-    ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have an origin field with a JSON object value");
+    ASSERT_STREQ(
+        wrequest.error()->c_str(),
+        "The request must have an \"origin\" field containing a JSON object value");
 }
 
 TEST(WazuhRequest_validate, missingOrigin)
@@ -129,8 +140,9 @@ TEST(WazuhRequest_validate, missingOrigin)
     auto wrequest = api::WazuhRequest {jrequest_invalid};
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
-    ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have an origin field with a JSON object value");
+    ASSERT_STREQ(
+        wrequest.error()->c_str(),
+        "The request must have an \"origin\" field containing a JSON object value");
 }
 
 TEST(WazuhRequest_validate, invalidOriginNameType)
@@ -141,8 +153,9 @@ TEST(WazuhRequest_validate, invalidOriginNameType)
     auto wrequest = api::WazuhRequest {jrequest_invalid};
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
-    ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have an origin/name field with a string value");
+    ASSERT_STREQ(
+        wrequest.error()->c_str(),
+        "The request must have an \"origin/name\" field containing a string value");
 }
 
 TEST(WazuhRequest_validate, missingOriginName)
@@ -153,8 +166,9 @@ TEST(WazuhRequest_validate, missingOriginName)
     auto wrequest = api::WazuhRequest {jrequest_invalid};
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
-    ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have an origin/name field with a string value");
+    ASSERT_STREQ(
+        wrequest.error()->c_str(),
+        "The request must have an \"origin/name\" field containing a string value");
 }
 
 TEST(WazuhRequest_validate, invalidOriginModuleType)
@@ -165,8 +179,9 @@ TEST(WazuhRequest_validate, invalidOriginModuleType)
     auto wrequest = api::WazuhRequest {jrequest_invalid};
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
-    ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have an origin/module field with a string value");
+    ASSERT_STREQ(
+        wrequest.error()->c_str(),
+        "The request must have an \"origin/module\" field containing a string value");
 }
 
 TEST(WazuhRequest_validate, missingOriginModule)
@@ -177,8 +192,9 @@ TEST(WazuhRequest_validate, missingOriginModule)
     auto wrequest = api::WazuhRequest {jrequest_invalid};
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
-    ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have an origin/module field with a string value");
+    ASSERT_STREQ(
+        wrequest.error()->c_str(),
+        "The request must have an \"origin/module\" field containing a string value");
 }
 
 TEST(WazuhRequest_validate, rootWrongType)
@@ -188,7 +204,7 @@ TEST(WazuhRequest_validate, rootWrongType)
     auto wrequest = api::WazuhRequest {jrequest_invalid};
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
-    ASSERT_STREQ(wrequest.error()->c_str(), "The request must be a JSON type object");
+    ASSERT_STREQ(wrequest.error()->c_str(), "The request must be a JSON object");
 }
 
 TEST(WazuhRequest_validate, rootWrongTypeArray)
@@ -198,7 +214,7 @@ TEST(WazuhRequest_validate, rootWrongTypeArray)
     auto wrequest = api::WazuhRequest {jrequest_invalid};
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
-    ASSERT_STREQ(wrequest.error()->c_str(), "The request must be a JSON type object");
+    ASSERT_STREQ(wrequest.error()->c_str(), "The request must be a JSON object");
 }
 
 TEST(WazuhRequest_getCommand, valid)
@@ -217,7 +233,6 @@ TEST(WazuhRequest_getParameters, valid)
         R"({"param 1":"disconnected","param 2":false,"param 3":1,"param 4":1.1})");
 }
 
-
 TEST(WazuhRequest_getCommand, invalidRequest)
 {
     auto jrequest_invalid = jrequest;
@@ -227,7 +242,7 @@ TEST(WazuhRequest_getCommand, invalidRequest)
     ASSERT_FALSE(wrequest.isValid());
     ASSERT_FALSE(wrequest.getCommand());
     ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have a command field with a string value");
+                 "The request must have a \"command\" field containing a string value");
 }
 
 TEST(WazuhRequest_getParameters, invalidRequest)
@@ -238,8 +253,9 @@ TEST(WazuhRequest_getParameters, invalidRequest)
     EXPECT_TRUE(wrequest.error());
     ASSERT_FALSE(wrequest.isValid());
     ASSERT_FALSE(wrequest.getParameters());
-    ASSERT_STREQ(wrequest.error()->c_str(),
-                 "The request must have a parameters field with a JSON object value");
+    ASSERT_STREQ(
+        wrequest.error()->c_str(),
+        "The request must have a \"parameters\" field containing a JSON object value");
 }
 
 TEST(WazuhRequest_create, valid_paramObjtype)
@@ -262,7 +278,8 @@ TEST(WazuhRequest_create, invalid_paramArraytype)
         api::WazuhRequest::create(
             "test command",
             "api",
-            json::Json {R"(["param 1","disconnected","param 2",false,"param 3",1,"param 4",1.1])"}),
+            json::Json {
+                R"(["param 1","disconnected","param 2",false,"param 3",1,"param 4",1.1])"}),
         std::runtime_error);
 }
 
@@ -272,6 +289,7 @@ TEST(WazuhRequest_create, invalid_emptyCommand)
         api::WazuhRequest::create(
             "",
             "api",
-            json::Json {R"({"param 1":"disconnected","param 2":false,"param 3":1,"param 4":1.1})"}),
+            json::Json {
+                R"({"param 1":"disconnected","param 2":false,"param 3":1,"param 4":1.1})"}),
         std::runtime_error);
 }

@@ -1,6 +1,7 @@
 #include "cmds/cmdTest.hpp"
 
 #include <atomic>
+#include <memory>
 
 #include <re2/re2.h>
 
@@ -15,6 +16,7 @@
 #include "base/utils/getExceptionStack.hpp"
 #include "builder.hpp"
 #include "register.hpp"
+#include "registry.hpp"
 #include "server/wazuhStreamProtocol.hpp"
 #include "stackExecutor.hpp"
 
@@ -22,13 +24,6 @@ namespace
 {
 std::atomic<bool> gs_doRun = true;
 cmd::StackExecutor g_exitHanlder {};
-
-void destroy()
-{
-    WAZUH_LOG_INFO("Destroying Engine resources");
-    KVDBManager::get().~KVDBManager();
-    logging::loggingTerm();
-}
 
 void sigint_handler(const int signum)
 {
@@ -62,8 +57,8 @@ void test(const std::string& kvdbPath,
     logging::loggingInit(logConfig);
     g_exitHanlder.add([]() { logging::loggingTerm(); });
 
-    KVDBManager::init(kvdbPath);
-    KVDBManager& kvdbManager = KVDBManager::get();
+    auto kvdb = std::make_shared<KVDBManager>(kvdbPath);
+    g_exitHanlder.add([kvdb]() { kvdb->clear(); });
 
     auto fileStore = std::make_shared<store::FileDriver>(fileStorage);
 
@@ -71,8 +66,8 @@ void test(const std::string& kvdbPath,
     auto hlpParsers = fileStore->get(hlpConfigFileName);
     if (std::holds_alternative<base::Error>(hlpParsers))
     {
-        WAZUH_LOG_ERROR("Could not retreive configuration file [{}] needed by the HLP "
-                        "module, error: {}",
+        WAZUH_LOG_ERROR("Engine \"test\" command: Configuration file \"{}\" could not be "
+                        "obtained: {}",
                         hlpConfigFileName.fullName(),
                         std::get<base::Error>(hlpParsers).message);
 
@@ -83,13 +78,15 @@ void test(const std::string& kvdbPath,
     // the parser mappings on start up for now
     hlp::configureParserMappings(std::get<json::Json>(hlpParsers).str());
 
+    auto registry = std::make_shared<builder::internals::Registry>();
     try
     {
-        builder::internals::registerBuilders();
+        builder::internals::registerBuilders(registry, {kvdb});
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Exception while registering builders: [{}]",
+        WAZUH_LOG_ERROR("Engine \"test\" command: An error occurred while registering "
+                        "the builders: {}",
                         utils::getExceptionStack(e));
         g_exitHanlder.execute();
         return;
@@ -102,7 +99,9 @@ void test(const std::string& kvdbPath,
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Exception while creating environment: [{}]",
+        WAZUH_LOG_ERROR("Engine \"test\" command: An error occurred while creating the "
+                        "environment \"{}\": {}",
+                        environment,
                         utils::getExceptionStack(e));
         g_exitHanlder.execute();
         return;
@@ -110,7 +109,9 @@ void test(const std::string& kvdbPath,
     auto envDefinition = fileStore->get({environment});
     if (std::holds_alternative<base::Error>(envDefinition))
     {
-        WAZUH_LOG_ERROR("Error while getting environment definition: [{}]",
+        WAZUH_LOG_ERROR("Engine \"test\" command: An error occurred while getting the "
+                        "definition of the environment \"{}\": {}",
+                        environment,
                         std::get<base::Error>(envDefinition).message);
         g_exitHanlder.execute();
         return;
@@ -141,7 +142,7 @@ void test(const std::string& kvdbPath,
     _testDriver->testEnvironment = envTmp;
 
     // TODO: Handle errors on construction
-    builder::Builder _builder(_testDriver);
+    builder::Builder _builder(_testDriver, registry);
     decltype(_builder.buildEnvironment({environment})) env;
     try
     {
@@ -149,7 +150,9 @@ void test(const std::string& kvdbPath,
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Exception while building environment: [{}]",
+        WAZUH_LOG_ERROR("Engine \"test\" command: An error occurred while building the "
+                        "environment \"{}\": {}",
+                        environment,
                         utils::getExceptionStack(e));
         g_exitHanlder.execute();
         return;
@@ -215,7 +218,8 @@ void test(const std::string& kvdbPath,
                 }
                 catch (const std::exception& e)
                 {
-                    WAZUH_LOG_WARN("Asset [{}] not found, skipping tracer: {}",
+                    WAZUH_LOG_WARN("Engine \"test\" command: Asset \"{}\" could not "
+                                   "found, skipping tracer: {}",
                                    name,
                                    utils::getExceptionStack(e));
                 }
@@ -228,7 +232,7 @@ void test(const std::string& kvdbPath,
     {
         std::cout << std::endl
                   << std::endl
-                  << "Enter log in single line (Crtl+C to exit):" << std::endl
+                  << "Enter a log in single line (Crtl+C to exit):" << std::endl
                   << std::endl;
         std::string line;
         std::getline(std::cin, line);
@@ -313,7 +317,9 @@ void test(const std::string& kvdbPath,
         }
         catch (const std::exception& e)
         {
-            WAZUH_LOG_ERROR("An error ocurred while parsing a message: [{}]", e.what());
+            WAZUH_LOG_ERROR(
+                "Engine \"test\" command: An error occurred while parsing a message: {}",
+                e.what());
         }
     }
 

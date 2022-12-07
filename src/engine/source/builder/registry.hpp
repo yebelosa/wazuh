@@ -26,27 +26,20 @@ class Registry
 private:
     std::unordered_map<std::string, Builder> m_builders;
 
+public:
     Registry() = default;
     Registry(const Registry&) = delete;
     Registry& operator=(const Registry&) = delete;
     Registry(Registry&&) = delete;
     Registry& operator=(Registry&&) = delete;
 
-public:
-    /**
-     * @brief Get Registry instance.
-     *
-     * @return auto& Registry instance.
-     */
-    static Registry& instance();
-
     /**
      * @brief Get the Builder object
      *
      * @param name Name of the builder.
-     * @return Builder& Builder object reference.
+     * @return Builder Builder object reference.
      */
-    static Builder& getBuilder(const std::string& name);
+    Builder getBuilder(const std::string& name);
 
     /**
      * @brief Register a builder.
@@ -55,21 +48,21 @@ public:
      * @param names Names of the builder.
      */
     template<typename... Names>
-    static void registerBuilder(Builder builder, Names... names)
+    void registerBuilder(Builder builder, Names... names)
     {
         for (auto name : {names...})
         {
-            if (Registry::instance().m_builders.find(name)
-                == Registry::instance().m_builders.end())
+            if (m_builders.find(name) == m_builders.end())
             {
-                Registry::instance().m_builders.insert(std::make_pair(name, builder));
+                m_builders.insert(std::make_pair(name, builder));
             }
             else
             {
-                throw std::logic_error(fmt::format(
-                    "Error, trying to register a builder with name [{}], but a "
-                    "builder with that name already exists",
-                    name));
+
+                throw std::logic_error(
+                    fmt::format("Engine registry: A builder is already registered with "
+                                "name \"{}\", registration failed.",
+                                name));
             }
         }
     }
@@ -78,7 +71,7 @@ public:
      * @brief Clear the registry.
      *
      */
-    static void clear();
+    void clear();
 };
 
 } // namespace builder::internals

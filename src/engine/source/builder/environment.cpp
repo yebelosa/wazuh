@@ -24,14 +24,17 @@ Asset::Type getAssetType(const std::string& name)
     }
     else
     {
-        throw std::runtime_error(fmt::format("Unknown asset type: {}", name));
+        // TODO: should this be a logic_error?
+        throw std::runtime_error(
+            fmt::format("Engine environment: Unknown type of asset \"{}\".", name));
     }
 }
 
 void Environment::buildGraph(
     const std::unordered_map<std::string, json::Json>& assetsDefinitons,
     const std::string& graphName,
-    Asset::Type type)
+    Asset::Type type,
+    std::shared_ptr<internals::Registry> registry)
 {
     auto graphPos = std::find_if(m_graphs.begin(),
                                  m_graphs.end(),
@@ -44,12 +47,12 @@ void Environment::buildGraph(
         std::shared_ptr<Asset> asset;
         try
         {
-            asset = std::make_shared<Asset>(json, type);
+            asset = std::make_shared<Asset>(json, type, registry);
         }
         catch (const std::exception& e)
         {
-            std::throw_with_nested(
-                std::runtime_error(fmt::format("Failed to build asset: {}", name)));
+            throw std::runtime_error(
+                fmt::format("Building asset \"{}\" failed: {}", name, e.what()));
         }
         m_assets.insert(std::make_pair(name, asset));
         graph.addNode(name, asset);
@@ -189,8 +192,11 @@ base::Expression Environment::getExpression() const
                     base::Broadcast::create(graph.node(graph.rootId())->m_name, {});
                 break;
             default:
-                throw std::runtime_error("Unsupported root asset type in "
-                                         "Environment::getExpression");
+                throw std::runtime_error(
+                    fmt::format("Building environment \"{}\" failed as the type of the "
+                                "asset \"{}\" is not supported",
+                                graphName,
+                                graph.node(graph.rootId())->m_name));
         }
         // Add input Expression to environment expression
         environment->getOperands().push_back(inputExpression);
@@ -244,10 +250,8 @@ base::Expression Environment::getExpression() const
                             break;
 
                         default:
-                            throw std::runtime_error(
-                                fmt::format("Unsupported asset type in "
-                                            "Environment::getExpression for asset [{}]",
-                                            current));
+                            throw std::runtime_error(fmt::format(
+                                "Asset type not supported from asset \"{}\"", current));
                     }
 
                     assetNode = base::Implication::create(

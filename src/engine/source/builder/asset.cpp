@@ -1,6 +1,7 @@
 #include "asset.hpp"
 
 #include <fmt/format.h>
+#include <logging/logging.hpp>
 
 #include "definitions.hpp"
 #include "registry.hpp"
@@ -17,8 +18,7 @@ std::string Asset::typeToString(Asset::Type type)
         case Asset::Type::FILTER: return "filter";
         default:
             throw std::runtime_error(
-                fmt::format("[Asset::typeToString(type)] unknown type: [{}]",
-                            static_cast<int>(type)));
+                fmt::format("Asset type (\"{}\") unknown", static_cast<int>(type)));
     }
 }
 
@@ -28,14 +28,20 @@ Asset::Asset(std::string name, Asset::Type type)
 {
 }
 
-Asset::Asset(const json::Json& jsonDefinition, Asset::Type type)
+Asset::Asset(const json::Json& jsonDefinition,
+             Asset::Type type,
+             std::shared_ptr<internals::Registry> registry)
     : m_type {type}
 {
     if (!jsonDefinition.isObject())
     {
-        throw std::runtime_error(fmt::format("[Asset::Asset(jsonDefinition, type)] "
-                                             "Asset expects a JSON object, got: [{}]",
-                                             jsonDefinition.typeName()));
+        WAZUH_LOG_DEBUG("Engine assets: \"{}\" method: JSON definition: \"{}\".",
+                        __func__,
+                        jsonDefinition.str());
+        throw std::runtime_error(
+            fmt::format("The asset should be an object, but it is of type \"{}\". Thus, "
+                        "the asset \"name\" field could not be obtained",
+                        jsonDefinition.typeName()));
     }
     // Process definitions
     json::Json tmpJson {jsonDefinition};
@@ -54,9 +60,17 @@ Asset::Asset(const json::Json& jsonDefinition, Asset::Type type)
     }
     else
     {
-        throw std::runtime_error("[Asset::Asset(jsonDefinition, type)] "
-                                 "Asset definition missing string name");
+        WAZUH_LOG_DEBUG("Engine assets: \"{}\" method: JSON definition: \"{}\".",
+                        __func__,
+                        jsonDefinition.str());
+        if (objectDefinition.end() != namePos && !std::get<1>(*namePos).isString())
+        {
+            throw std::runtime_error(fmt::format("Asset \"name\" field is not a string"));
+        }
+        throw std::runtime_error(fmt::format("Asset \"name\" field is missing"));
     }
+
+    const std::string assetName {tmpJson.getString("/name").value_or("")};
 
     // Get parents
     auto parentsPos = std::find_if(objectDefinition.begin(),
@@ -69,9 +83,13 @@ Asset::Asset(const json::Json& jsonDefinition, Asset::Type type)
     {
         if (!std::get<1>(*parentsPos).isArray())
         {
+            WAZUH_LOG_DEBUG("Engine assets: \"{}\" method: JSON definition: \"{}\".",
+                            __func__,
+                            jsonDefinition.str());
             throw std::runtime_error(
-                fmt::format("[Asset::Asset(jsonDefinition, type)] "
-                            "Asset definition [parents] expects an array, got: [{}]",
+                fmt::format("Asset \"{}\" parents definition is expected "
+                            "to be an array but it is of type \"{}\"",
+                            assetName,
                             std::get<1>(*parentsPos).typeName()));
         }
         auto parents = std::get<1>(*parentsPos).getArray().value();
@@ -104,15 +122,18 @@ Asset::Asset(const json::Json& jsonDefinition, Asset::Type type)
     {
         try
         {
-            m_check =
-                internals::Registry::getBuilder("stage.check")({std::get<1>(*checkPos)});
+            m_check = registry->getBuilder("stage.check")({std::get<1>(*checkPos)});
             objectDefinition.erase(checkPos);
         }
         catch (const std::exception& e)
         {
-            std::throw_with_nested(
-                std::runtime_error("[Asset::Asset(jsonDefinition, type)] failed to "
-                                   "build stage check"));
+            WAZUH_LOG_DEBUG("Engine assets: \"{}\" method: JSON definition: \"{}\".",
+                            __func__,
+                            jsonDefinition.str());
+            throw std::runtime_error(
+                fmt::format("The check stage failed while building the asset \"{}\": {}",
+                            assetName,
+                            e.what()));
         }
     }
 
@@ -126,7 +147,7 @@ Asset::Asset(const json::Json& jsonDefinition, Asset::Type type)
         try
         {
             auto parseExpression =
-                internals::Registry::getBuilder("stage.parse")({std::get<1>(*parsePos)});
+                registry->getBuilder("stage.parse")({std::get<1>(*parsePos)});
             objectDefinition.erase(parsePos);
             if (m_check)
             {
@@ -139,9 +160,8 @@ Asset::Asset(const json::Json& jsonDefinition, Asset::Type type)
         }
         catch (const std::exception& e)
         {
-            std::throw_with_nested(
-                std::runtime_error("[Asset::Asset(jsonDefinition, type)] failed to "
-                                   "build stage parse"));
+            throw std::runtime_error(fmt::format(
+                "Parse stage: Building asset \"{}\" failed: {}", assetName, e.what()));
         }
     }
 
@@ -152,8 +172,7 @@ Asset::Asset(const json::Json& jsonDefinition, Asset::Type type)
     {
         auto stageName = "stage." + std::get<0>(tuple);
         auto stageDefinition = std::get<1>(tuple);
-        auto stageExpression =
-            internals::Registry::getBuilder(stageName)({stageDefinition});
+        auto stageExpression = registry->getBuilder(stageName)({stageDefinition});
         asOp->getOperands().push_back(stageExpression);
     }
 }
@@ -179,7 +198,9 @@ base::Expression Asset::getExpression() const
             }
             break;
         case Asset::Type::FILTER: asset = base::And::create(m_name, {m_check}); break;
-        default: throw std::runtime_error("Unknown asset type in Asset::getExpression");
+        default:
+            throw std::runtime_error(
+                fmt::format("Asset type not supported from asset \"{}\"", m_name));
     }
 
     return asset;

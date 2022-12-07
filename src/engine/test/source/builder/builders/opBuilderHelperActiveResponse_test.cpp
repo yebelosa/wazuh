@@ -128,9 +128,10 @@ string getExpectedResult(string commandName,
     auto isAll {"ALL" == location};
     auto isLocal {"LOCAL" == location};
     auto isID {!location.empty()
-               && std::find_if(location.begin(), location.end(), [](unsigned char c) {
-                      return !std::isdigit(c);
-                  }) == location.end()};
+               && std::find_if(location.begin(),
+                               location.end(),
+                               [](unsigned char c) { return !std::isdigit(c); })
+                      == location.end()};
     string locationValue {};
     if (isAll)
     {
@@ -148,11 +149,11 @@ string getExpectedResult(string commandName,
     string expectedResult {};
 
     auto firstLocationParam {isLocal ? 'R' : 'N'};
-    auto secondLocationParam {isAll|isID ? 'S' : 'N'};
+    auto secondLocationParam {isAll | isID ? 'S' : 'N'};
 
     expectedResult =
         string("(local_source) [] N") + firstLocationParam + secondLocationParam + " "
-        + locationValue + " {\"version\":" + ar::VERSION_SUPPORTED + ",\"command\":\""
+        + locationValue + " {\"version\":" + ar::SUPPORTED_VERSION + ",\"command\":\""
         + commandName + (timeout.empty() ? "0" : timeout)
         + "\",\"parameters\":{\"extra_args\":[" + extraArgs + "],\"alert\":"
         + originalEvent->str() + "},\"origin\":{\"module\":\"wazuh-engine\",\"name\":\""

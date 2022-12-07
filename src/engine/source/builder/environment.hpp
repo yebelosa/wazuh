@@ -16,6 +16,8 @@
 #include "expression.hpp"
 #include "graph.hpp"
 
+#include "registry.hpp"
+
 namespace builder
 {
 
@@ -61,7 +63,8 @@ private:
      */
     void buildGraph(const std::unordered_map<std::string, json::Json>& assetsDefinitons,
                     const std::string& graphName,
-                    Asset::Type type);
+                    Asset::Type type,
+                    std::shared_ptr<internals::Registry> registry);
 
     /**
      * @brief Inject Filters into specific subgraph.
@@ -88,7 +91,8 @@ public:
      * @throws std::runtime_error if the environment cannot be built.
      */
     Environment(const json::Json& jsonDefinition,
-                std::shared_ptr<const store::IStoreRead> storeRead)
+                std::shared_ptr<const store::IStoreRead> storeRead,
+                std::shared_ptr<internals::Registry> registry)
 
     {
         auto envObj = jsonDefinition.getObject().value();
@@ -100,7 +104,7 @@ public:
                          [](const auto& tuple) { return std::get<0>(tuple) == "name"; });
         if (nameIt == envObj.end())
         {
-            throw std::runtime_error("Environment has no name");
+            throw std::runtime_error("Environment name is missing");
         }
         auto nameOpt = std::get<1>(*nameIt).getString();
         if (!nameOpt)
@@ -118,39 +122,41 @@ public:
             std::find_if(envObj.begin(),
                          envObj.end(),
                          [](auto& tuple) { return std::get<0>(tuple) == FILTERS; });
+
         if (envObj.end() != filtersPos)
         {
             auto filtersList = std::get<1>(*filtersPos).getArray().value();
-            std::transform(filtersList.begin(),
-                           filtersList.end(),
-                           std::inserter(m_assets, m_assets.begin()),
-                           [&](auto& json)
-                           {
-                               auto assetType = Asset::Type::FILTER;
-                               auto assetName = json.getString().value();
-                               auto assetJson = storeRead->get(base::Name {assetName});
-                               if (std::holds_alternative<base::Error>(assetJson))
-                               {
-                                   throw std::runtime_error(fmt::format(
-                                       "[Environment] Cannot retreive filter [{}]: {}",
-                                       assetName,
-                                       std::get<base::Error>(assetJson).message));
-                               }
-                               return std::make_pair(
-                                   assetName,
-                                   std::make_shared<Asset>(
-                                       std::get<json::Json>(assetJson), assetType));
-                           });
+            std::transform(
+                filtersList.begin(),
+                filtersList.end(),
+                std::inserter(m_assets, m_assets.begin()),
+                [&](auto& json)
+                {
+                    const auto assetType = Asset::Type::FILTER;
+                    const auto assetName = json.getString().value();
+                    auto assetJson = storeRead->get(base::Name {assetName});
+                    if (std::holds_alternative<base::Error>(assetJson))
+                    {
+                        throw std::runtime_error(
+                            fmt::format("Filter \"{}\" could not be obtained: {}",
+                                        assetName,
+                                        std::get<base::Error>(assetJson).message));
+                    }
+                    return std::make_pair(
+                        assetName,
+                        std::make_shared<Asset>(
+                            std::get<json::Json>(assetJson), assetType, registry));
+                });
             envObj.erase(filtersPos);
         }
 
         // Build graphs
-        // We need atleast one graph to build the environment.
+        // We need at least one graph to build the environment.
         if (envObj.empty())
         {
             throw std::runtime_error(
-                fmt::format("[Environment(json, catalog)] environment [{}] needs "
-                            "atleast one graph",
+                fmt::format("Environment \"{}\" needs at least one asset (decoder, rule "
+                            "or output) to build a graph",
                             m_name));
         }
         for (auto& [name, json] : envObj)
@@ -177,7 +183,7 @@ public:
                     if (std::holds_alternative<base::Error>(assetJson))
                     {
                         throw std::runtime_error(
-                            fmt::format("[Environment] Cannot retreive asset [{}]: {}",
+                            fmt::format("Asset \"{}\" cannot be obtained: {}",
                                         assetName,
                                         std::get<base::Error>(assetJson).message));
                     }
@@ -185,7 +191,7 @@ public:
                 });
 
             // Build graph
-            buildGraph(assetsDefinitions, name, getAssetType(name));
+            buildGraph(assetsDefinitions, name, getAssetType(name), registry);
 
             // Add filters
             addFilters(name);
@@ -204,19 +210,19 @@ public:
                     {
                         childrenNames += child + " ";
                     }
-                    throw std::runtime_error(
-                        fmt::format("Error building [{}] graph: parent [{}] not found, "
-                                    "for children [{}]",
-                                    name,
-                                    parent,
-                                    childrenNames));
+                    throw std::runtime_error(fmt::format(
+                        "Error building environment \"{}\". Asset \"{}\" requested for "
+                        "parent \"{}\" which could not be found",
+                        name,
+                        parent,
+                        childrenNames));
                 }
                 for (auto& child : children)
                 {
                     if (!std::get<1>(*graphPos).hasNode(child))
                     {
                         throw std::runtime_error(
-                            fmt::format("Missing child asset: {}", child));
+                            fmt::format("Asset \"{}\" could not be found", child));
                     }
                 }
             }

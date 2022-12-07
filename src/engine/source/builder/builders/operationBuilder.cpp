@@ -22,9 +22,9 @@ using namespace base;
 Expression conditionValueBuilder(std::string&& field, Json&& value)
 {
     const auto name {fmt::format("condition.value[{}=={}]", field, value.str())};
-    const auto successTrace {fmt::format("{} -> Success", name)};
+    const auto successTrace {fmt::format("[{}] -> Success", name)};
 
-    const auto failureTrace {fmt::format("{} -> Failure", name)};
+    const auto failureTrace {fmt::format("[{}] -> Failure", name)};
     return Term<EngineOp>::create(
         name,
         [=](Event event)
@@ -43,9 +43,9 @@ Expression conditionValueBuilder(std::string&& field, Json&& value)
 Expression conditionReferenceBuilder(std::string&& field, std::string&& reference)
 {
     const auto name {fmt::format("condition.reference[{}=={}]", field, reference)};
-    const auto successTrace {fmt::format("{} -> Success", name)};
+    const auto successTrace {fmt::format("[{}] -> Success", name)};
 
-    const auto failureTrace {fmt::format("{} -> Failure", name)};
+    const auto failureTrace {fmt::format("[{}] -> Failure", name)};
     return Term<EngineOp>::create(
         name,
         [=](Event event)
@@ -67,7 +67,7 @@ Expression mapValueBuilder(std::string&& field, Json&& value)
 {
     const auto name {fmt::format("map.value[{}={}]", field, value.prettyStr())};
 
-    const auto successTrace {fmt::format("{} -> Success", name)};
+    const auto successTrace {fmt::format("[{}] -> Success", name)};
     return Term<EngineOp>::create(name,
                                   [=](Event event)
                                   {
@@ -81,10 +81,10 @@ Expression mapValueBuilder(std::string&& field, Json&& value)
 Expression mapReferenceBuilder(std::string&& field, std::string&& reference)
 {
     const auto name {fmt::format("map.reference[{}={}]", field, reference)};
-    const auto successTrace {fmt::format("{} -> Success", name)};
+    const auto successTrace {fmt::format("[{}] -> Success", name)};
 
-    const auto failureTrace {
-        fmt::format("{} -> Failure: [{}] not found", name, reference)};
+    const auto failureTrace {fmt::format(
+        "[{}] -> Failure: Parameter \"{}\" reference not found", name, reference)};
     return Term<EngineOp>::create(
         name,
         [=](Event event)
@@ -109,7 +109,9 @@ enum class OperationType
     FILTER
 };
 
-Expression operationBuilder(const std::any& definition, OperationType type)
+Expression operationBuilder(const std::any& definition,
+                            OperationType type,
+                            std::shared_ptr<Registry> registry)
 {
     std::string field;
     Json value;
@@ -121,9 +123,8 @@ Expression operationBuilder(const std::any& definition, OperationType type)
     }
     catch (std::exception& e)
     {
-        std::throw_with_nested(
-            std::runtime_error("[builders::operationBuilder(<definition, type>)] "
-                               "Received unexpected arguments."));
+        throw std::runtime_error(std::string("Error trying to obtain the arguments: ")
+                                 + e.what());
     }
 
     // Call apropiate builder based on value
@@ -138,10 +139,8 @@ Expression operationBuilder(const std::any& definition, OperationType type)
             case OperationType::MAP:
                 return mapReferenceBuilder(std::move(field), std::move(reference));
             default:
-                throw std::runtime_error(
-                    fmt::format("[builders::operationBuilder(<definition, type>)] "
-                                "Unsupported operation type: {}",
-                                static_cast<int>(type)));
+                throw std::runtime_error(fmt::format("Unsupported operation type \"{}\"",
+                                                     static_cast<int>(type)));
         }
     }
     else if (value.isString()
@@ -159,15 +158,15 @@ Expression operationBuilder(const std::any& definition, OperationType type)
 
         try
         {
-            return Registry::getBuilder("helper." + helperName)(
+            return registry->getBuilder("helper." + helperName)(
                 std::make_tuple(std::move(field), helperName, std::move(helperArgs)));
         }
         catch (const std::exception& e)
         {
-            std::throw_with_nested(std::runtime_error(
-                fmt::format("[builders::operationBuilder(<definition, type>)] "
-                            "Exception building helper [{}]",
-                            helperName)));
+            throw std::runtime_error(fmt::format(
+                "An error occurred while building the helper function \"{}\": {}",
+                helperName,
+                e.what()));
         }
     }
     else if (value.isArray())
@@ -185,7 +184,7 @@ Expression operationBuilder(const std::any& definition, OperationType type)
         {
             auto path = field + syntax::JSON_PATH_SEPARATOR + std::to_string(i);
             expressions.push_back(
-                operationBuilder(std::make_tuple(path, array[i]), type));
+                operationBuilder(std::make_tuple(path, array[i]), type, registry));
         }
 
         switch (type)
@@ -208,7 +207,8 @@ Expression operationBuilder(const std::any& definition, OperationType type)
         for (auto& [key, value] : object)
         {
             auto path = field + syntax::JSON_PATH_SEPARATOR + key;
-            expressions.push_back(operationBuilder(std::make_tuple(path, value), type));
+            expressions.push_back(
+                operationBuilder(std::make_tuple(path, value), type, registry));
         }
 
         switch (type)
@@ -234,10 +234,8 @@ Expression operationBuilder(const std::any& definition, OperationType type)
             case OperationType::MAP:
                 return mapValueBuilder(std::move(field), std::move(value));
             default:
-                throw std::runtime_error(
-                    fmt::format("[builders::operationBuilder(<definition, type>)] "
-                                "Unsupported operation type: {}",
-                                static_cast<int>(type)));
+                throw std::runtime_error(fmt::format("Unsupported operation type \"{}\"",
+                                                     static_cast<int>(type)));
         }
     }
 }
@@ -247,14 +245,20 @@ Expression operationBuilder(const std::any& definition, OperationType type)
 namespace builder::internals::builders
 {
 
-base::Expression operationConditionBuilder(std::any definition)
+Builder getOperationConditionBuilder(std::shared_ptr<Registry> registry)
 {
-    return operationBuilder(definition, OperationType::FILTER);
+    return [registry](std::any definition)
+    {
+        return operationBuilder(definition, OperationType::FILTER, registry);
+    };
 }
 
-base::Expression operationMapBuilder(std::any definition)
+Builder getOperationMapBuilder(std::shared_ptr<Registry> registry)
 {
-    return operationBuilder(definition, OperationType::MAP);
+    return [registry](std::any definition)
+    {
+        return operationBuilder(definition, OperationType::MAP, registry);
+    };
 }
 
 } // namespace builder::internals::builders

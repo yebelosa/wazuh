@@ -80,8 +80,9 @@ public:
         if (!ptr)
         {
             throw std::runtime_error(
-                fmt::format("Error trying to downcast [{}] to [{}], this "
-                            "Formula type is [{}]",
+                fmt::format("Engine base expression: Error trying to downcast \"{}\" to "
+                            "\"{}\" from a "
+                            "formula of type \"{}\".",
                             typeid(Formula).name(),
                             typeid(Derived).name(),
                             typeid(decltype(*shared_from_this())).name()));
@@ -229,20 +230,14 @@ public:
      *
      * @return true if expression is type Operation::Term, false otherwise.
      */
-    bool isTerm() const override
-    {
-        return true;
-    }
+    bool isTerm() const override { return true; }
 
     /**
      * @brief Get the function used to compute the term
      *
      * @return the function that will be used to compute the term
      */
-    T getFn() const
-    {
-        return m_fn;
-    }
+    T getFn() const { return m_fn; }
 };
 
 // ----- Operations -----

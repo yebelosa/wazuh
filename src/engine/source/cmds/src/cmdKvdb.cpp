@@ -15,13 +15,14 @@ namespace cmd
 
 InputType stringToInputType(std::string const& inputType)
 {
-    if (inputType == "json")
+    if ("json" == inputType)
     {
         return InputType::JSON;
     }
     else
     {
-        throw std::runtime_error(fmt::format("Invalid input type: {}", inputType));
+        throw std::runtime_error(fmt::format(
+            "Engine \"kvdb\" command: Invalid input type \"{}\".", inputType));
     }
 }
 
@@ -34,14 +35,15 @@ void kvdb(const std::string& kvdbPath,
     logging::LoggingConfig logConfig;
     logConfig.logLevel = logging::LogLevel::Debug;
     logging::loggingInit(logConfig);
-
+    std::shared_ptr<KVDBManager> kvdbManager;
     try
     {
-        KVDBManager::init(kvdbPath);
+        kvdbManager = std::make_shared<KVDBManager>(kvdbPath);
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Error initializing KVDBManager: {}",
+        WAZUH_LOG_ERROR("Engine \"kvdb\" command: An error occurred while initializing "
+                        "KVDBManager: {}",
                         utils::getExceptionStack(e));
         return;
     }
@@ -59,7 +61,11 @@ void kvdb(const std::string& kvdbPath,
     }
     else
     {
-        WAZUH_LOG_ERROR("Error while opening file [{}]. Error [{}]", inputFile, errno);
+        WAZUH_LOG_ERROR("Engine \"kvdb\" command: An error occurred while opening the "
+                        "file \"{}\": {} ({})",
+                        inputFile,
+                        strerror(errno),
+                        errno);
         return;
     }
 
@@ -74,20 +80,23 @@ void kvdb(const std::string& kvdbPath,
             }
             catch (const std::exception& e)
             {
-                WAZUH_LOG_ERROR("Error parsing JSON: {}", utils::getExceptionStack(e));
+                WAZUH_LOG_ERROR("Engine \"kvdb\" command: An error occurred while "
+                                "parsing the JSON file \"{}\": {}",
+                                inputFile,
+                                utils::getExceptionStack(e));
                 return;
             }
 
             if (!jKv.isObject())
             {
-                WAZUH_LOG_ERROR("Error while parsing JSON file [{}]. Expected object",
+                WAZUH_LOG_ERROR("Engine \"kvdb\" command: An error occurred while "
+                                "parsing the JSON file \"{}\": JSON is not an object.",
                                 inputFile);
                 return;
             }
             auto entries = jKv.getObject();
-            KVDBManager& kvdbManager = KVDBManager::get();
-            kvdbManager.addDb(kvdbName);
-            auto kvdbHandle = kvdbManager.getDB(kvdbName);
+            kvdbManager->addDb(kvdbName);
+            auto kvdbHandle = kvdbManager->getDB(kvdbName);
             for (const auto& [key, value] : entries.value())
             {
 
@@ -98,7 +107,8 @@ void kvdb(const std::string& kvdbPath,
                 }
                 catch (const std::exception& e)
                 {
-                    WAZUH_LOG_ERROR("Error while writing key [{}] to KVDB [{}]: {}",
+                    WAZUH_LOG_ERROR("Engine \"kvdb\" command: An error occurred while "
+                                    "writing the key \"{}\" to the database \"{}\": {}",
                                     key,
                                     kvdbName,
                                     utils::getExceptionStack(e));
@@ -109,9 +119,13 @@ void kvdb(const std::string& kvdbPath,
             kvdbHandle->close();
         }
         break;
-        default: WAZUH_LOG_ERROR("Invalid input type"); return;
+        default:
+            WAZUH_LOG_ERROR(
+                "Engine \"kvdb\" command: Invalid input type, only JSON is supported.");
+            return;
     }
-    WAZUH_LOG_INFO("KVDB [{}] created successfully", kvdbName);
+    WAZUH_LOG_INFO("Engine \"kvdb\" command: Database \"{}\" successfully created.",
+                   kvdbName);
 }
 
 } // namespace cmd

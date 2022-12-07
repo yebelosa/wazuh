@@ -9,6 +9,7 @@
 #include <uvw/pipe.hpp>
 
 #include <utils/stringUtils.hpp>
+#include <logging/logging.hpp>
 
 #include "base/utils/getExceptionStack.hpp"
 
@@ -24,16 +25,16 @@ void client(uvw::Loop& loop,
     client->on<uvw::ErrorEvent>(
         [](const uvw::ErrorEvent& event, uvw::PipeHandle& handle)
         {
-            std::cerr << "API Client ErrorEvent: " << event.what() << std::endl;
+            WAZUH_LOG_DEBUG("Engine API Client: A \"uvw::ErrorEvent\" was raised.");
+            WAZUH_LOG_ERROR("Engine API Client: {}.", event.what());
             handle.close();
         });
 
     client->once<uvw::ConnectEvent>(
         [&request](const uvw::ConnectEvent&, uvw::PipeHandle& handle)
         {
-            //std::cout << "API Client ConnectEvent" << std::endl;
+            WAZUH_LOG_DEBUG("Engine API Client: A \"uvw::ConnectEvent\" was raised.");
             std::vector<char> buffer {request.begin(), request.end()};
-            //std::cout << "API Client sending request: " << request << std::endl;
             handle.write(buffer.data(), buffer.size());
             handle.read();
         });
@@ -41,9 +42,7 @@ void client(uvw::Loop& loop,
     client->on<uvw::DataEvent>(
         [&response](const uvw::DataEvent& event, uvw::PipeHandle& handle)
         {
-            //std::cout << "API Client DataEvent" << std::endl;
-            // std::cout << "API Client received response: "
-            //           << std::string(event.data.get(), event.length) << std::endl;
+            WAZUH_LOG_DEBUG("Engine API Client: A \"uvw::DataEvent\" was raised.");
             response =
                 std::string(event.data.get() + sizeof(int), event.length - sizeof(int));
             handle.close();
@@ -55,6 +54,7 @@ void client(uvw::Loop& loop,
     client->once<uvw::EndEvent>(
         [](const uvw::EndEvent&, uvw::PipeHandle& handle)
         {
+            WAZUH_LOG_DEBUG("Engine API Client: A \"uvw::EndEvent\" was raised.");
             // std::cout << "API Client EndEvent" << std::endl;
             int count = 0;
             handle.loop().walk([&count](uvw::BaseHandle&) { ++count; });
@@ -65,6 +65,7 @@ void client(uvw::Loop& loop,
     client->once<uvw::CloseEvent>(
         [](const uvw::CloseEvent&, uvw::PipeHandle& handle)
         {
+            WAZUH_LOG_DEBUG("Engine API Client: A \"uvw::CloseEvent\" was raised.");
             // std::cout << "API Client CloseEvent" << std::endl;
             int count = 0;
             handle.loop().walk([&count](uvw::BaseHandle&) { ++count; });
@@ -81,7 +82,9 @@ void dummyServer(uvw::Loop& loop, const std::string& socketPath)
 
     server->on<uvw::ErrorEvent>(
         [](const uvw::ErrorEvent& error, uvw::PipeHandle& handle)
-        { std::cerr << "API Server ErrorEvent: " << error.what() << std::endl; });
+        {
+            std::cerr << "API Server ErrorEvent: " << error.what() << std::endl;
+        });
 
     server->on<uvw::ListenEvent>(
         [](const uvw::ListenEvent&, uvw::PipeHandle& handle)
@@ -149,6 +152,11 @@ namespace cmd::apiclnt
 
 std::string connection(const std::string& socketPath, const std::string& request)
 {
+    WAZUH_LOG_DEBUG("Engine API Client: \"{}\" method: Socket: \"{}\", Request: \"{}\".",
+                    __func__,
+                    socketPath,
+                    request);
+
     // Add protocol header
     int32_t length = request.size();
     std::unique_ptr<char[]> buffer(new char[sizeof(length) + length]);
@@ -161,6 +169,11 @@ std::string connection(const std::string& socketPath, const std::string& request
     auto loop = uvw::Loop::getDefault();
     client(*loop, socketPath, requestWithHeader, response);
     loop->run();
+
+    WAZUH_LOG_DEBUG("Engine API Client: \"{}\" method: Request response: \"{}\".",
+                    __func__,
+                    response);
+
     return response;
 }
 

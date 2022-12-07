@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include <fmt/format.h>
+
 namespace logicExpression
 {
 /**
@@ -50,10 +52,7 @@ public:
      *
      * @return std::shared_ptr<ThisType>
      */
-    std::shared_ptr<ThisType> getPtr()
-    {
-        return ThisType::shared_from_this();
-    }
+    std::shared_ptr<ThisType> getPtr() { return ThisType::shared_from_this(); }
 
     /**
      * @brief Get the Ptr const object
@@ -126,11 +125,12 @@ private:
     }
     Expression(ExpressionType type)
     {
-        if (type == TERM)
+        if (TERM == type)
         {
-            throw std::runtime_error(
-                "TERM type is not allowed, use Expression(FunctionType "
-                "function) instead");
+            throw std::runtime_error(fmt::format(
+                "Engine logic expression evaluator: \"{}\" method: TERM type is not "
+                "allowed, use \"Expression(FunctionType function)\" instead.",
+                __func__));
         }
 
         m_type = type;
@@ -218,7 +218,9 @@ getDijstraEvaluator(const std::shared_ptr<const Expression<Event>>& expression)
                     break;
                 default:
                     throw std::runtime_error(
-                        "Unknown operator type in [DijstraEvaluator]");
+                        fmt::format("Engine logic expression evaluator: \"{}\" method: "
+                                    "Unknown operator type.",
+                                    __func__));
             }
         }
 

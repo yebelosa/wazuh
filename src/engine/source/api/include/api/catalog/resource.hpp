@@ -163,7 +163,7 @@ public:
         if (Format::ERROR_FORMAT == format)
         {
             throw std::runtime_error(
-                fmt::format("Invalid format [{}] received", formatToStr(format)));
+                fmt::format("Format of \"{}\" not supported", name.fullName()));
         }
         m_format = format;
 
@@ -179,8 +179,8 @@ public:
             // Assert name of the collection is a valid type
             if (Type::ERROR_TYPE == strToType(name.parts()[0].c_str()))
             {
-                throw std::runtime_error(fmt::format(
-                    "Invalid {} type [{}]", typeToStr(m_type), name.parts()[0]));
+                throw std::runtime_error(
+                    fmt::format("Invalid collection type \"{}\"", name.parts()[0]));
             }
 
             // Collections don't need validation
@@ -192,12 +192,16 @@ public:
         {
             // Get type
             m_type = strToType(name.parts()[0].c_str());
-            if (Type::ERROR_TYPE == m_type || Type::COLLECTION == m_type)
+
+            if (Type::ERROR_TYPE == m_type)
             {
-                throw std::runtime_error(fmt::format("Invalid {} type [{}] for [{}]",
-                                                     typeToStr(Type::COLLECTION),
-                                                     name.parts()[0],
-                                                     typeToStr(m_type)));
+                throw std::runtime_error(
+                    fmt::format("Invalid type \"{}\"", name.parts()[0]));
+            }
+            else if (Type::COLLECTION == m_type)
+            {
+                throw std::runtime_error(
+                    fmt::format("Invalid collection type \"{}\"", name.parts()[0]));
             }
 
             // Assets and Environments needs validation
@@ -215,7 +219,7 @@ public:
         else
         {
             throw std::runtime_error(fmt::format(
-                "Invalid name [{}] received, expected a name with 1 or 3 parts",
+                "Invalid name \"{}\" received, a name with 1, 2 or 3 parts was expected",
                 name.fullName()));
         }
     }

@@ -1,5 +1,8 @@
 #include "parseEvent.hpp"
 
+#include <fmt/format.h>
+#include <logging/logging.hpp>
+
 namespace base::parseEvent
 {
 
@@ -46,16 +49,20 @@ Event parseOssecEvent(const std::string& event)
 
     if (event.length() <= MINIMUM_EVENT_ALLOWED_LENGTH)
     {
+        WAZUH_LOG_DEBUG("Engine base event parse: \"{}\" method: Event received: \"{}\".",
+                        __func__,
+                        event);
         throw std::runtime_error(
-            "Invalid event format. Event is too short. Received Event: \"" + event
-            + "\"");
+            fmt::format("Invalid event format, event is too short ({})", event.length()));
     }
 
     if (':' != event[1])
     {
-        throw std::runtime_error("Invalid event format. A colon should be right after "
-                                 "the first character. Received Event: \""
-                                 + event + "\"");
+        WAZUH_LOG_DEBUG("Engine base event parse: \"{}\" method: Event received: \"{}\".",
+                        __func__,
+                        event);
+        throw std::runtime_error(fmt::format("Invalid event format, a colon was expected "
+                                             "to be right after the first character"));
     }
 
     const int queue {event[0]};
@@ -112,11 +119,13 @@ Event parseOssecEvent(const std::string& event)
         }
         catch (std::runtime_error& e)
         {
-            const std::string msg =
-                "An error occurred while parsing the location field of "
-                "the event. Event received: \""
-                + event + "\".";
-            std::throw_with_nested(msg);
+            WAZUH_LOG_DEBUG(
+                "Engine base event parse: \"{}\" method: Event received: \"{}\".",
+                __func__,
+                event);
+            throw fmt::format(
+                "An error occurred while parsing the \"location\" field of the event: {}",
+                e.what());
         }
 
         msgStartIndex = endIdx + 1;
@@ -142,9 +151,11 @@ Event parseOssecEvent(const std::string& event)
 
             if (event.length() < LAST_COLON_INDEX)
             {
-                throw std::runtime_error(
-                    "Invalid event format. Event is too short. Received Event: \"" + event
-                    + "\"");
+                WAZUH_LOG_DEBUG(
+                    "Engine base event parse: \"{}\" method: Event received: \"{}\".",
+                    event);
+                throw std::runtime_error(fmt::format(
+                    "Invalid event format, event is too short ({})", event.length()));
             }
 
             try
@@ -155,11 +166,13 @@ Event parseOssecEvent(const std::string& event)
             }
             catch (std::runtime_error& e)
             {
-                const std::string msg =
-                    "An error occurred while parsing the location field "
-                    "of the event. Event received: \""
-                    + event + "\".";
-                std::throw_with_nested(msg);
+                WAZUH_LOG_DEBUG(
+                    "Engine base event parse: \"{}\" method: Event received: \"{}\".",
+                    __func__,
+                    event);
+                throw fmt::format("An error occurred while parsing  the \"location\" "
+                                  "field of  the event: {}",
+                                  e.what());
             }
 
             msgStartIndex = LAST_COLON_INDEX + 1;
@@ -175,11 +188,13 @@ Event parseOssecEvent(const std::string& event)
             }
             catch (std::runtime_error& e)
             {
-                const std::string msg =
-                    "An error occurred while parsing the location field "
-                    "of the event. Event received: \""
-                    + event + "\".";
-                std::throw_with_nested(msg);
+                WAZUH_LOG_DEBUG(
+                    "Engine base event parse: \"{}\" method: Event received: \"{}\".",
+                    __func__,
+                    event);
+                throw fmt::format("An error occurred while parsing the \"location\" "
+                                  "field of the event: {}",
+                                  e.what());
             }
 
             msgStartIndex = secondColonIdx + 1;
@@ -193,11 +208,12 @@ Event parseOssecEvent(const std::string& event)
     }
     catch (std::runtime_error& e)
     {
-        const std::string msg =
-            "An error occurred while parsing the location field of the "
-            "event. Event received: \""
-            + event + "\".";
-        std::throw_with_nested(msg);
+        WAZUH_LOG_DEBUG("Engine base event parse: \"{}\" method: Event received: \"{}\".",
+                        __func__,
+                        event);
+        throw fmt::format("An error occurred while parsing the \"location\" field of  "
+                          "the event: {}",
+                          e.what());
     }
 
     // TODO Create event here

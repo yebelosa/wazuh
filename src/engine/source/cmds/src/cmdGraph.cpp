@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <memory>
 
 #include <hlp/hlp.hpp>
 #include <kvdb/kvdbManager.hpp>
@@ -12,6 +13,7 @@
 #include "base/utils/getExceptionStack.hpp"
 #include "builder.hpp"
 #include "register.hpp"
+#include "registry.hpp"
 #include "stackExecutor.hpp"
 
 namespace
@@ -35,38 +37,40 @@ void graph(const std::string& kvdbPath,
     logging::loggingInit(logConfig);
     g_exitHanlder.add([]() { logging::loggingTerm(); });
 
-    KVDBManager::init(kvdbPath);
-    g_exitHanlder.add([]() { KVDBManager::get().clear(); });
+    auto kvdb = std::make_shared<KVDBManager>(kvdbPath);
+    g_exitHanlder.add([kvdb]() { kvdb->clear(); });
 
     auto store = std::make_shared<store::FileDriver>(fileStorage);
     base::Name hlpConfigFileName({"schema", "wazuh-logpar-types", "0"});
     auto hlpParsers = store->get(hlpConfigFileName);
     if (std::holds_alternative<base::Error>(hlpParsers))
     {
-        WAZUH_LOG_ERROR("Could not retreive configuration file [{}] needed by the HLP "
-                        "module, error: {}",
-                        hlpConfigFileName.fullName(),
-                        std::get<base::Error>(hlpParsers).message);
+        WAZUH_LOG_ERROR(
+            "Engine \"graph\" command: Configuration file \"{}\" needed by the "
+            "parsing module could not be obtained: {}",
+            hlpConfigFileName.fullName(),
+            std::get<base::Error>(hlpParsers).message);
         g_exitHanlder.execute();
         return;
     }
     // TODO because builders don't have access to the catalog we are configuring
     // the parser mappings on start up for now
     hlp::configureParserMappings(std::get<json::Json>(hlpParsers).str());
-
+    auto registry = std::make_shared<builder::internals::Registry>();
     try
     {
-        builder::internals::registerBuilders();
+        builder::internals::registerBuilders(registry, {kvdb});
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Exception while registering builders: [{}]",
+        WAZUH_LOG_ERROR("Engine \"graph\" command: An error occurred while registering "
+                        "the builders: {}",
                         utils::getExceptionStack(e));
         g_exitHanlder.execute();
         return;
     }
 
-    builder::Builder _builder(store);
+    builder::Builder _builder(store, registry);
     decltype(_builder.buildEnvironment({environment})) env;
     try
     {
@@ -74,7 +78,8 @@ void graph(const std::string& kvdbPath,
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Exception while building environment: [{}]",
+        WAZUH_LOG_ERROR("Engine \"graph\" command: An error occurred while building the "
+                        "environment: \"{}\"",
                         utils::getExceptionStack(e));
         g_exitHanlder.execute();
         return;
@@ -87,7 +92,8 @@ void graph(const std::string& kvdbPath,
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Exception while building environment Expression: [{}]",
+        WAZUH_LOG_ERROR("Engine \"graph\" command: An error occurred while building the "
+                        "environment expression: {}",
                         utils::getExceptionStack(e));
         g_exitHanlder.execute();
         return;
@@ -105,12 +111,12 @@ void graph(const std::string& kvdbPath,
     graphFile.open(envGraph.string());
     graphFile << env.getGraphivzStr();
     std::cout << std::endl
-              << "Environment graph saved on " << envGraph.string() << std::endl;
+              << "Environment graph saved to " << envGraph.string() << std::endl;
     graphFile.close();
 
     graphFile.open(envExprGraph.string());
     graphFile << base::toGraphvizStr(envExpression);
-    std::cout << "Environment expression graph saved on " << envExprGraph.string()
+    std::cout << "Environment expression graph saved to " << envExprGraph.string()
               << std::endl;
     graphFile.close();
 
