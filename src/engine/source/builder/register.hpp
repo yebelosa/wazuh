@@ -1,6 +1,9 @@
 #ifndef _REGISTER_H
 #define _REGISTER_H
 
+#include <hlp/logpar.hpp>
+#include <kvdb/kvdbManager.hpp>
+
 #include "builders/opBuilderFileOutput.hpp"
 #include "builders/opBuilderHelperActiveResponse.hpp"
 #include "builders/opBuilderHelperFilter.hpp"
@@ -9,6 +12,7 @@
 #include "builders/opBuilderKVDB.hpp"
 #include "builders/opBuilderLogParser.hpp"
 #include "builders/opBuilderSCAdecoder.hpp"
+#include "builders/opBuilderSpeficHLP.hpp"
 #include "builders/opBuilderWdb.hpp"
 #include "builders/operationBuilder.hpp"
 #include "builders/stageBuilderCheck.hpp"
@@ -23,6 +27,8 @@ namespace builder::internals
 struct dependencies
 {
     std::shared_ptr<KVDBManager> kvdbManager;
+    std::shared_ptr<hlp::logpar::Logpar> logpar;
+    size_t logparDebugLvl;
 };
 
 static void registerBuilders(std::shared_ptr<Registry> registry,
@@ -43,7 +49,9 @@ static void registerBuilders(std::shared_ptr<Registry> registry,
 
     // Parsers
     registry->registerBuilder(builders::getStageBuilderParse(registry), "stage.parse");
-    registry->registerBuilder(builders::opBuilderLogParser, "parser.logpar");
+    registry->registerBuilder(
+        builders::getOpBuilderLogParser(dependencies.logpar, dependencies.logparDebugLvl),
+        "parser.logpar");
 
     // Outputs
     registry->registerBuilder(builders::getStageBuilderOutputs(registry),
@@ -155,6 +163,41 @@ static void registerBuilders(std::shared_ptr<Registry> registry,
                               "helper.sysc_ni_save_ipv4");
     registry->registerBuilder(builders::opBuilderHelperSaveNetInfoIPv6,
                               "helper.sysc_ni_save_ipv6");
+
+    // High level parsers
+    registry->registerBuilder(builders::opBuilderSpecificHLPBoolParse,
+                              "helper.parse_bool");
+    registry->registerBuilder(builders::opBuilderSpecificHLPByteParse,
+                              "helper.parse_byte");
+    registry->registerBuilder(builders::opBuilderSpecificHLPLongParse,
+                              "helper.parse_long");
+    registry->registerBuilder(builders::opBuilderSpecificHLPFloatParse,
+                              "helper.parse_float");
+    registry->registerBuilder(builders::opBuilderSpecificHLPDoubleParse,
+                              "helper.parse_double");
+    registry->registerBuilder(builders::opBuilderSpecificHLPBinaryParse,
+                              "helper.parse_binary");
+    registry->registerBuilder(builders::opBuilderSpecificHLPDateParse,
+                              "helper.parse_date");
+    registry->registerBuilder(builders::opBuilderSpecificHLPIPParse, "helper.parse_ip");
+    registry->registerBuilder(builders::opBuilderSpecificHLPURIParse, "helper.parse_uri");
+    registry->registerBuilder(builders::opBuilderSpecificHLPUserAgentParse,
+                              "helper.parse_useragent");
+    registry->registerBuilder(builders::opBuilderSpecificHLPFQDNParse,
+                              "helper.parse_fqdn");
+    registry->registerBuilder(builders::opBuilderSpecificHLPFilePathParse,
+                              "helper.parse_file");
+    registry->registerBuilder(builders::opBuilderSpecificHLPJSONParse,
+                              "helper.parse_json");
+    registry->registerBuilder(builders::opBuilderSpecificHLPXMLParse, "helper.parse_xml");
+    registry->registerBuilder(builders::opBuilderSpecificHLPCSVParse, "helper.parse_csv");
+    registry->registerBuilder(builders::opBuilderSpecificHLPDSVParse, "helper.parse_dsv");
+    registry->registerBuilder(builders::opBuilderSpecificHLPKeyValueParse,
+                              "helper.parse_kv");
+    registry->registerBuilder(builders::opBuilderSpecificHLPQuotedParse,
+                              "helper.parse_quoted");
+    registry->registerBuilder(builders::opBuilderSpecificHLPBetweenParse,
+                              "helper.parse_between");
 }
 } // namespace builder::internals
 

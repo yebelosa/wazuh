@@ -186,11 +186,12 @@ void configureSubcommandLogtest(std::shared_ptr<CLI::App> app)
         ->default_val(3);
 
     // Debug levels
-    auto debug = logtest->add_flag(
-        "-d, --debug",
-        args::debug_level,
-        "Enables the debug mode [0-2]. The flag can appear multiple times. No flag[0]: "
-        "No debug, d[1]: Assets history, dd[2]: 1 + Full tracing.");
+    auto debug =
+        logtest->add_flag("-d, --debug",
+                          args::debug_level,
+                          "Enable debug mode [0-3]. Flag can appear multiple times. "
+                          "No flag[0]: No debug, d[1]: Asset history, dd[2]: 1 + "
+                          "Full tracing, ddd[3]: 2 + detailed parser trace.");
 
     // Trace
     logtest
@@ -284,6 +285,13 @@ void configureSubCommandCatalog(std::shared_ptr<CLI::App> app)
                    args::catalogYmlFormat,
                    "[default] Use YAML as Input/Output format.")
         ->excludes(catalog->get_option("--json"));
+
+    // Log level
+    catalog->add_option("-l, --log_level",
+                    args::log_level,
+                    "Sets the logging level: 0 = Debug, 1 = Info, 2 = Warning, 3 = Error")
+        ->default_val(3)
+        ->check(CLI::Range(0, 3));
 
     // Shared obpitons among subcommands
     auto name = "name";
@@ -575,7 +583,8 @@ int main(int argc, char* argv[])
                          formatString,
                          args::catalogContent,
                          args::catalogPath,
-                         args::catalogRecursive);
+                         args::catalogRecursive,
+                         args::log_level);
         }
         else if (app->get_subcommand(args::SUBCOMMAND_ENVIRONMENT)->parsed())
         {

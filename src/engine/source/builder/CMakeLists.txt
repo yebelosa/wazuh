@@ -43,6 +43,7 @@ add_library(builders OBJECT
   builders/opBuilderKVDB.cpp
   builders/opBuilderLogParser.cpp
   builders/opBuilderSCAdecoder.cpp
+  builders/opBuilderSpeficHLP.cpp
   builders/opBuilderWdb.cpp
   builders/operationBuilder.cpp
   builders/stageBuilderCheck.cpp
@@ -73,7 +74,7 @@ target_link_libraries(builders
   builder::ivalidator
   store::istore
   base
-  hlp
+  hlp2
   kvdb
   re2
   logicExpression
