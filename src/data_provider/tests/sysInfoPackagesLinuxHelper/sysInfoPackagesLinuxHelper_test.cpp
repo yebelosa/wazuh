@@ -433,3 +433,49 @@ TEST_F(SysInfoPackagesLinuxHelperTest, parsePacmanInformationNull)
     EXPECT_EQ("Arch Linux", jsPackageInfo["vendor"]);
     EXPECT_EQ("", jsPackageInfo["description"]);
 }
+
+TEST_F(SysInfoPackagesLinuxHelperTest, parseSnapCorrectMapping)
+{
+    std::string jData = "{\"id\":\"rw36mkAjdIKl13dzfwyxP87cejpyIcct\",\"title\":\"gnome-3-38-2004\",\"summary\":\"Shared GNOME 3.38 Ubuntu stack\",\"description\":\"This snap includes a GNOME 3.38 stack (the base libraries and desktop \\nintegration components) and shares it through the content interface. \\n\",\"icon\":\"/v2/icons/gnome-3-38-2004/icon\",\"installed-size\":363151360,\"name\":\"gnome-3-38-2004\",\"publisher\":{\"id\":\"canonical\",\"username\":\"canonical\",\"display-name\":\"Canonical\",\"validation\":\"verified\"},\"developer\":\"canonical\",\"status\":\"active\",\"type\":\"app\",\"base\":\"core20\",\"version\":\"0+git.6f39565\",\"channel\":\"latest/stable\",\"tracking-channel\":\"latest/stable/ubuntu-22.04\",\"ignore-validation\":false,\"revision\":\"119\",\"confinement\":\"strict\",\"private\":false,\"devmode\":false,\"jailmode\":false,\"contact\":\"\",\"mounted-from\":\"/var/lib/snapd/snaps/gnome-3-38-2004_119.snap\",\"media\":[{\"type\":\"icon\",\"url\":\"https://dashboard.snapcraft.io/site_media/appmedia/2021/01/icon_FvbmexL.png\"}],\"install-date\":\"2022-11-23T20:33:59.025662696-03:00\"}";
+    nlohmann::json jsonInput = nlohmann::json::parse(jData);
+
+    const auto& jsPackageInfo { PackageLinuxHelper::parseSnap(jsonInput) };
+    EXPECT_FALSE(jsPackageInfo.empty());
+    EXPECT_EQ("gnome-3-38-2004", jsPackageInfo["name"]);
+    EXPECT_EQ(363151360, jsPackageInfo["size"]);
+    EXPECT_EQ("2022-11-23T20:33:59.025662696-03:00", jsPackageInfo["install_time"]);
+    EXPECT_EQ(" ", jsPackageInfo["groups"]);
+    EXPECT_EQ("0+git.6f39565", jsPackageInfo["version"]);
+    EXPECT_EQ(" ", jsPackageInfo["architecture"]);
+    EXPECT_EQ("snap", jsPackageInfo["format"]);
+    EXPECT_EQ("Canonical", jsPackageInfo["vendor"]);
+    EXPECT_EQ("Shared GNOME 3.38 Ubuntu stack", jsPackageInfo["description"]);
+}
+
+TEST_F(SysInfoPackagesLinuxHelperTest, parseSnapInvalidInputName)
+{
+    std::string jData = "{\"id\":\"rw36mkAjdIKl13dzfwyxP87cejpyIcct\",\"title\":\"gnome-3-38-2004\",\"summary\":\"Shared GNOME 3.38 Ubuntu stack\",\"description\":\"This snap includes a GNOME 3.38 stack (the base libraries and desktop \\nintegration components) and shares it through the content interface. \\n\",\"icon\":\"/v2/icons/gnome-3-38-2004/icon\",\"installed-size\":363151360,\"publisher\":{\"id\":\"canonical\",\"username\":\"canonical\",\"display-name\":\"Canonical\",\"validation\":\"verified\"},\"developer\":\"canonical\",\"status\":\"active\",\"type\":\"app\",\"base\":\"core20\",\"version\":\"0+git.6f39565\",\"channel\":\"latest/stable\",\"tracking-channel\":\"latest/stable/ubuntu-22.04\",\"ignore-validation\":false,\"revision\":\"119\",\"confinement\":\"strict\",\"private\":false,\"devmode\":false,\"jailmode\":false,\"contact\":\"\",\"mounted-from\":\"/var/lib/snapd/snaps/gnome-3-38-2004_119.snap\",\"media\":[{\"type\":\"icon\",\"url\":\"https://dashboard.snapcraft.io/site_media/appmedia/2021/01/icon_FvbmexL.png\"}],\"install-date\":\"2022-11-23T20:33:59.025662696-03:00\"}";
+    nlohmann::json jsonInput = nlohmann::json::parse(jData);
+
+    const auto& jsPackageInfo { PackageLinuxHelper::parseSnap(jsonInput) };
+    EXPECT_TRUE(jsPackageInfo.empty());
+}
+
+TEST_F(SysInfoPackagesLinuxHelperTest, parseSnapInvalidInputVersion)
+{
+    std::string jData = "{\"id\":\"rw36mkAjdIKl13dzfwyxP87cejpyIcct\",\"title\":\"gnome-3-38-2004\",\"summary\":\"Shared GNOME 3.38 Ubuntu stack\",\"description\":\"This snap includes a GNOME 3.38 stack (the base libraries and desktop \\nintegration components) and shares it through the content interface. \\n\",\"icon\":\"/v2/icons/gnome-3-38-2004/icon\",\"installed-size\":363151360,\"publisher\":{\"id\":\"canonical\",\"username\":\"canonical\",\"display-name\":\"Canonical\",\"validation\":\"verified\"},\"developer\":\"canonical\",\"status\":\"active\",\"type\":\"app\",\"base\":\"core20\",\"channel\":\"latest/stable\",\"tracking-channel\":\"latest/stable/ubuntu-22.04\",\"ignore-validation\":false,\"revision\":\"119\",\"confinement\":\"strict\",\"private\":false,\"devmode\":false,\"jailmode\":false,\"contact\":\"\",\"mounted-from\":\"/var/lib/snapd/snaps/gnome-3-38-2004_119.snap\",\"media\":[{\"type\":\"icon\",\"url\":\"https://dashboard.snapcraft.io/site_media/appmedia/2021/01/icon_FvbmexL.png\"}],\"install-date\":\"2022-11-23T20:33:59.025662696-03:00\"}";
+    nlohmann::json jsonInput = nlohmann::json::parse(jData);
+
+    const auto& jsPackageInfo { PackageLinuxHelper::parseSnap(jsonInput) };
+    EXPECT_TRUE(jsPackageInfo.empty());
+}
+
+TEST_F(SysInfoPackagesLinuxHelperTest, parseSnapValidSizeAsString)
+{
+    std::string jData = "{\"id\":\"rw36mkAjdIKl13dzfwyxP87cejpyIcct\",\"title\":\"gnome-3-38-2004\",\"summary\":\"Shared GNOME 3.38 Ubuntu stack\",\"description\":\"This snap includes a GNOME 3.38 stack (the base libraries and desktop \\nintegration components) and shares it through the content interface. \\n\",\"icon\":\"/v2/icons/gnome-3-38-2004/icon\",\"installed-size\":\"363151360\",\"name\":\"gnome-3-38-2004\",\"publisher\":{\"id\":\"canonical\",\"username\":\"canonical\",\"display-name\":\"Canonical\",\"validation\":\"verified\"},\"developer\":\"canonical\",\"status\":\"active\",\"type\":\"app\",\"base\":\"core20\",\"version\":\"0+git.6f39565\",\"channel\":\"latest/stable\",\"tracking-channel\":\"latest/stable/ubuntu-22.04\",\"ignore-validation\":false,\"revision\":\"119\",\"confinement\":\"strict\",\"private\":false,\"devmode\":false,\"jailmode\":false,\"contact\":\"\",\"mounted-from\":\"/var/lib/snapd/snaps/gnome-3-38-2004_119.snap\",\"media\":[{\"type\":\"icon\",\"url\":\"https://dashboard.snapcraft.io/site_media/appmedia/2021/01/icon_FvbmexL.png\"}],\"install-date\":\"2022-11-23T20:33:59.025662696-03:00\"}";
+    nlohmann::json jsonInput = nlohmann::json::parse(jData);
+
+    const auto& jsPackageInfo { PackageLinuxHelper::parseSnap(jsonInput) };
+    EXPECT_FALSE(jsPackageInfo.empty());
+    EXPECT_EQ(363151360, jsPackageInfo["size"]);
+}
