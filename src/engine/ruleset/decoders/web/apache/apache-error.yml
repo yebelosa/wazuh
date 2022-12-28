@@ -20,13 +20,13 @@ check:
 
 parse:
   logpar:
-    - event.original: "[<@timestamp/APACHE_ERROR>] [<~apache.error.module>:<log.level>] [pid <process.pid>:tid <process.thread.id>] <~> [client <source.address>:<source.port>] <message>"
-    - event.original: "[<@timestamp/APACHE_ERROR>] [<~apache.error.module>:<log.level>] [pid <process.pid>:tid <process.thread.id>] [client <source.address>] <message>"
-    - event.original: "[<@timestamp/APACHE_ERROR>] [<~apache.error.module>:<log.level>] [pid <process.pid>] [client <source.address>:<source.port>] <message>"
-    - event.original: "[<@timestamp/APACHE_ERROR>] [<~apache.error.module>:<log.level>] [pid <process.pid>] <message>"
-    - event.original: "[<@timestamp/APACHE_ERROR2>] [<log.level>] [client <source.address>:<source.port>] <message>"
-    - event.original: "[<@timestamp/APACHE_ERROR2>] [<log.level>] [client <source.address>] <message>"
-    - event.original: "[<@timestamp/APACHE_ERROR2>] [<log.level>] <message>"
+    - event.original: "[<@timestamp/26\\/Dec\\/2016:18:23:35 +0200>] [<~apache.error.module>:<log.level>] [pid <process.pid>:tid <process.thread.id>] <~> [client <source.address>:<source.port>] <message>"
+    - event.original: "[<@timestamp/26\\/Dec\\/2016:18:23:35 +0200>] [<~apache.error.module>:<log.level>] [pid <process.pid>:tid <process.thread.id>] [client <source.address>] <message>"
+    - event.original: "[<@timestamp/26\\/Dec\\/2016:18:23:35 +0200>] [<~apache.error.module>:<log.level>] [pid <process.pid>] [client <source.address>:<source.port>] <message>"
+    - event.original: "[<@timestamp/26\\/Dec\\/2016:18:23:35 +0200>] [<~apache.error.module>:<log.level>] [pid <process.pid>] <message>"
+    - event.original: "[<@timestamp/26\\/Dec\\/2016:18:23:35 +0200>] [<log.level>] [client <source.address>:<source.port>] <message>"
+    - event.original: "[<@timestamp/26\\/Dec\\/2016:18:23:35 +0200>] [<log.level>] [client <source.address>] <message>"
+    - event.original: "[<@timestamp/26\\/Dec\\/2016:18:23:35 +0200>] [<log.level>] <message>"
 
 normalize:
   - check:
@@ -39,7 +39,12 @@ normalize:
       - event.type: +a_append/info
 
   - map:
+      - event.category: +a_append/web
+      - event.created: $@timestamp
+      - event.dataset: apache.error
       - event.kind: event
+      - event.module: apache
+      - service.type: apache
       - event.category: +a_append/web
       - file.path: "+r_ext/$message/File does not exist: ([^,]+)(,.*)?$"
       - http.request.referrer: "+r_ext/$message/File does not exist: [^,]+, referer: (.*)$"
