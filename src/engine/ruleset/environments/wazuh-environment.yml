@@ -9,7 +9,7 @@ decoders:
   - decoder/queue-dbsync/0
   - decoder/queue-localfile/0
   - decoder/queue-rootcheck/0
-  - decoder/queue-windowsevents/0
+  - decoder/queue-windows/0
   - decoder/windows_event_channel/0
   - decoder/windows_security/0
   - decoder/windows_sysmon/0
