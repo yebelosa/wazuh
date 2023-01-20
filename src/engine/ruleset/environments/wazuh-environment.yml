@@ -13,8 +13,8 @@ decoders:
   - decoder/windows_event_channel/0
   - decoder/windows_security/0
   - decoder/windows_sysmon/0
-  - decoder/powershell/0
-  - decoder/powershell_operational/0
+  - decoder/windows_powershell/0
+  - decoder/windows_powershell_operational/0
 
   # General format decoders
   - decoder/json/0
