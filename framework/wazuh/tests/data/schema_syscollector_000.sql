@@ -31,11 +31,11 @@ CREATE TABLE IF NOT EXISTS sys_hwinfo (
     scan_time TEXT,
     board_serial TEXT,
     cpu_name TEXT,
-    cpu_cores INTEGER CHECK (cpu_cores > 0),
-    cpu_mhz REAL CHECK (cpu_mhz > 0),
-    ram_total INTEGER CHECK (ram_total > 0),
-    ram_free INTEGER CHECK (ram_free > 0),
-    ram_usage INTEGER CHECK (ram_usage >= 0 AND ram_usage <= 100),
+    cpu_cores INTEGER,
+    cpu_mhz REAL,
+    ram_total INTEGER,
+    ram_free INTEGER,
+    ram_usage INTEGER,
     PRIMARY KEY (scan_id, board_serial)
 );
 
@@ -182,6 +182,10 @@ INSERT INTO sys_osinfo VALUES (2011369001, '2019/03/21 10:25:00', 'agent', 'x86_
 
 INSERT INTO sys_hwinfo VALUES (2089525312, '2019/03/21 11:25:00', '0', 'Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz', 2,
                                1992.001, 492832, 64032, 88);
+
+/* accept empty/NULL values at cpu fields */
+INSERT INTO sys_hwinfo VALUES (2089525313, '2023/01/31 9:00:00', '0', 'Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz', 0,
+                               0.0, 0, 0, 0);
 
 INSERT INTO sys_programs VALUES (95033803, '2019/03/21 13:25:00', 'deb', 'wazuh-manager', 'extra', 'admin', 320462,
                                  'Wazuh, Inc <info@wazuh.com>', null, '3.9.0-1', 'amd64', null, null,
