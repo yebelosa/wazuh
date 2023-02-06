@@ -406,9 +406,9 @@ os_info *get_unix_version()
     os_calloc(1,sizeof(os_info),info);
 
     // Try to open /etc/os-release
-    os_release = fopen("/etc/os-release", "r");
+    os_release = wfopen("/etc/os-release", "r");
     // Try to open /usr/lib/os-release
-    if (!os_release) os_release = fopen("/usr/lib/os-release", "r");
+    if (!os_release) os_release = wfopen("/usr/lib/os-release", "r");
 
     if (os_release) {
         while (fgets(buff, sizeof(buff)- 1, os_release)) {
@@ -449,7 +449,7 @@ os_info *get_unix_version()
                 regex_t regexCompiled;
                 regmatch_t match[2];
                 int match_size;
-                if (version_release = fopen("/etc/centos-release","r"), version_release){
+                if (version_release = wfopen("/etc/centos-release","r"), version_release){
                     os_free(info->os_version);
                     static const char *pattern = "([0-9][0-9]*\\.?[0-9]*)\\.*";
                     if (regcomp(&regexCompiled, pattern, REG_EXTENDED)) {
@@ -482,7 +482,7 @@ os_info *get_unix_version()
         regmatch_t match[2];
         int match_size;
         // CentOS
-        if (version_release = fopen("/etc/centos-release","r"), version_release){
+        if (version_release = wfopen("/etc/centos-release","r"), version_release){
             info->os_name = strdup("CentOS Linux");
             info->os_platform = strdup("centos");
             static const char *pattern = "([0-9][0-9]*\\.?[0-9]*)\\.*";
@@ -500,7 +500,7 @@ os_info *get_unix_version()
             regfree(&regexCompiled);
             fclose(version_release);
         // Fedora
-        } else if (version_release = fopen("/etc/fedora-release","r"), version_release){
+        } else if (version_release = wfopen("/etc/fedora-release","r"), version_release){
             info->os_name = strdup("Fedora");
             info->os_platform = strdup("fedora");
             static const char *pattern = " ([0-9][0-9]*) ";
@@ -518,7 +518,7 @@ os_info *get_unix_version()
             regfree(&regexCompiled);
             fclose(version_release);
         // RedHat
-        } else if (version_release = fopen("/etc/redhat-release","r"), version_release){
+        } else if (version_release = wfopen("/etc/redhat-release","r"), version_release){
             static const char *pattern = "([0-9][0-9]*\\.?[0-9]*)\\.*";
             if (regcomp(&regexCompiled, pattern, REG_EXTENDED)) {
                 merror_exit("Can not compile regular expression.");
@@ -549,7 +549,7 @@ os_info *get_unix_version()
             regfree(&regexCompiled);
             fclose(version_release);
         // Arch
-        } else if (version_release = fopen("/etc/arch-release","r"), version_release){
+        } else if (version_release = wfopen("/etc/arch-release","r"), version_release){
             info->os_name = strdup("Arch Linux");
             info->os_platform = strdup("arch");
             static const char *pattern = "([0-9][0-9]*\\.?[0-9]*)\\.*";
@@ -570,7 +570,7 @@ os_info *get_unix_version()
             regfree(&regexCompiled);
             fclose(version_release);
         // Ubuntu
-        } else if (version_release = fopen("/etc/lsb-release","r"), version_release){
+        } else if (version_release = wfopen("/etc/lsb-release","r"), version_release){
             info->os_name = strdup("Ubuntu");
             info->os_platform = strdup("ubuntu");
             while (fgets(buff, sizeof(buff) - 1, version_release)) {
@@ -583,7 +583,7 @@ os_info *get_unix_version()
 
             fclose(version_release);
         // Gentoo
-        } else if (version_release = fopen("/etc/gentoo-release","r"), version_release){
+        } else if (version_release = wfopen("/etc/gentoo-release","r"), version_release){
             info->os_name = strdup("Gentoo");
             info->os_platform = strdup("gentoo");
             static const char *pattern = " ([0-9][0-9]*\\.?[0-9]*)\\.*";
@@ -601,7 +601,7 @@ os_info *get_unix_version()
             regfree(&regexCompiled);
             fclose(version_release);
         // SuSE
-        } else if (version_release = fopen("/etc/SuSE-release","r"), version_release){
+        } else if (version_release = wfopen("/etc/SuSE-release","r"), version_release){
             info->os_name = strdup("SuSE Linux");
             info->os_platform = strdup("suse");
             static const char *pattern = ".*VERSION = ([0-9][0-9]*)";
@@ -619,7 +619,7 @@ os_info *get_unix_version()
             regfree(&regexCompiled);
             fclose(version_release);
         // Debian
-        } else if (version_release = fopen("/etc/debian_version","r"), version_release){
+        } else if (version_release = wfopen("/etc/debian_version","r"), version_release){
             info->os_name = strdup("Debian GNU/Linux");
             info->os_platform = strdup("debian");
             static const char *pattern = "([0-9][0-9]*\\.?[0-9]*)\\.*";
@@ -637,7 +637,7 @@ os_info *get_unix_version()
             regfree(&regexCompiled);
             fclose(version_release);
         // Slackware
-        } else if (version_release = fopen("/etc/slackware-version","r"), version_release){
+        } else if (version_release = wfopen("/etc/slackware-version","r"), version_release){
             info->os_name = strdup("Slackware");
             info->os_platform = strdup("slackware");
             static const char *pattern = " ([0-9][0-9]*\\.?[0-9]*)\\.*";
@@ -718,7 +718,7 @@ os_info *get_unix_version()
                 info->os_name = strdup("SunOS");
                 info->os_platform = strdup("sunos");
 
-                if (os_release = fopen("/etc/release", "r"), os_release) {
+                if (os_release = wfopen("/etc/release", "r"), os_release) {
                   if(fgets(buff, sizeof(buff) - 1, os_release) == NULL){
                       merror("Cannot read from /etc/release.");
                       fclose(os_release);
@@ -915,7 +915,7 @@ int get_nproc() {
     char string[OS_MAXSTR];
     int cpu_cores = 0;
 
-    if (!(fp = fopen("/proc/cpuinfo", "r"))) {
+    if (!(fp = wfopen("/proc/cpuinfo", "r"))) {
         mwarn("Unable to read cpuinfo file");
     } else {
         while (fgets(string, OS_MAXSTR, fp) != NULL){

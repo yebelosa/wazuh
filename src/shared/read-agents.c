@@ -469,14 +469,14 @@ int print_syscheck(const char *sk_name, const char *sk_ip, const char *fname,
         snprintf(tmp_file, 512, "%s/syscheck",
                  SYSCHECK_DIR);
 
-        fp = fopen(tmp_file, "r+");
+        fp = wfopen(tmp_file, "r+");
     }
 
     else if (sk_ip == NULL) {
         /* Print database */
         snprintf(tmp_file, 512, "%s/%s->syscheck", SYSCHECK_DIR, sk_name);
 
-        fp = fopen(tmp_file, "r+");
+        fp = wfopen(tmp_file, "r+");
     }
 
     else if (!print_registry) {
@@ -486,7 +486,7 @@ int print_syscheck(const char *sk_name, const char *sk_ip, const char *fname,
                  sk_name,
                  sk_ip);
 
-        fp = fopen(tmp_file, "r+");
+        fp = wfopen(tmp_file, "r+");
     }
 
     else {
@@ -496,7 +496,7 @@ int print_syscheck(const char *sk_name, const char *sk_ip, const char *fname,
                  sk_name,
                  sk_ip);
 
-        fp = fopen(tmp_file, "r+");
+        fp = wfopen(tmp_file, "r+");
     }
 
     if (fp) {
@@ -527,7 +527,7 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
              sk_name,
              sk_ip);
 
-    fp = fopen(tmp_file, "w");
+    fp = wfopen(tmp_file, "w");
     if (fp) {
         fclose(fp);
     }
@@ -542,7 +542,7 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
              sk_name,
              sk_ip);
 
-    fp = fopen(tmp_file, "w");
+    fp = wfopen(tmp_file, "w");
     if (fp) {
         fclose(fp);
     }
@@ -554,7 +554,7 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
              sk_name,
              sk_ip);
 
-    fp = fopen(tmp_file, "w");
+    fp = wfopen(tmp_file, "w");
     if (fp) {
         fclose(fp);
     }
@@ -568,7 +568,7 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
              sk_name,
              sk_ip);
 
-    fp = fopen(tmp_file, "w");
+    fp = wfopen(tmp_file, "w");
     if (fp) {
         fclose(fp);
     }

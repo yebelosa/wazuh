@@ -121,7 +121,7 @@ OSList *w_os_get_process_list()
 int w_is_file(const char * const file)
 {
     FILE *fp;
-    fp = fopen(file, "r");
+    fp = wfopen(file, "r");
     if (fp) {
         fclose(fp);
         return (1);

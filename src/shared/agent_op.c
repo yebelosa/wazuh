@@ -102,12 +102,12 @@ char *os_read_agent_name()
 
     mdebug2("Calling os_read_agent_name().");
 
-    fp = fopen(AGENT_INFO_FILE, "r");
+    fp = wfopen(AGENT_INFO_FILE, "r");
 
     /* We give 1 second for the file to be created */
     if (!fp) {
         sleep(1);
-        fp = fopen(AGENT_INFO_FILE, "r");
+        fp = wfopen(AGENT_INFO_FILE, "r");
     }
 
     if (!fp) {
@@ -149,7 +149,7 @@ char *os_read_agent_ip()
 
     mdebug2("Calling os_read_agent_ip().");
 
-    fp = fopen(AGENT_INFO_FILE, "r");
+    fp = wfopen(AGENT_INFO_FILE, "r");
     if (!fp) {
         merror(FOPEN_ERROR, AGENT_INFO_FILE, errno, strerror(errno));
         return (NULL);
@@ -180,7 +180,7 @@ char *os_read_agent_id()
 
     mdebug2("Calling os_read_agent_id().");
 
-    fp = fopen(AGENT_INFO_FILE, "r");
+    fp = wfopen(AGENT_INFO_FILE, "r");
     if (!fp) {
         merror(FOPEN_ERROR, AGENT_INFO_FILE, errno, strerror(errno));
         return (NULL);
@@ -217,7 +217,7 @@ char *os_read_agent_profile()
     FILE *fp;
 
     mdebug2("Calling os_read_agent_profile().");
-    fp = fopen(AGENT_INFO_FILE, "r");
+    fp = wfopen(AGENT_INFO_FILE, "r");
 
     if (!fp) {
         merror(FOPEN_ERROR, AGENT_INFO_FILE, errno, strerror(errno));
@@ -254,7 +254,7 @@ int os_write_agent_info(const char *agent_name, __attribute__((unused)) const ch
 {
     FILE *fp;
 
-    fp = fopen(AGENT_INFO_FILE, "w");
+    fp = wfopen(AGENT_INFO_FILE, "w");
     if (!fp) {
         merror(FOPEN_ERROR, AGENT_INFO_FILE, errno, strerror(errno));
         return (0);
@@ -773,7 +773,7 @@ char * get_agent_id_from_name(const char *agent_name) {
 
     snprintf(path,PATH_MAX,"%s", KEYS_FILE);
 
-    fp = fopen(path, "r");
+    fp = wfopen(path, "r");
 
     if (!fp) {
         mdebug1("Couldnt open file '%s'", KEYS_FILE);

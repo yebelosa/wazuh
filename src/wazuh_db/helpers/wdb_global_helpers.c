@@ -983,7 +983,7 @@ int wdb_create_agent_db(int id, const char *name) {
     snprintf(dst_path, OS_FLSIZE, "%s/agents/%03d-%s.db", WDB_DIR, id, name);
 
     snprintf(src_path, OS_FLSIZE, "%s/%s", WDB_DIR, WDB_PROF_NAME);
-    if (!(source = fopen(src_path, "r"))) {
+    if (!(source = wfopen(src_path, "r"))) {
         if (errno != ENOENT) // If we get any other error other than 'file does not exits'
         {
             merror("Error accessing file (%s): (%s)", src_path, strerror(errno));
@@ -996,13 +996,13 @@ int wdb_create_agent_db(int id, const char *name) {
             return OS_INVALID;
         }
 
-        if (!(source = fopen(src_path, "r"))) {
+        if (!(source = wfopen(src_path, "r"))) {
             merror("Couldn't open profile '%s'.", src_path);
             return OS_INVALID;
         }
     }
 
-    if (!(dest = fopen(dst_path, "wx"))) {
+    if (!(dest = wfopen(dst_path, "wx"))) {
         fclose(source);
 
         switch (errno) {
@@ -1084,7 +1084,7 @@ time_t get_agent_date_added(int agent_id) {
 
     snprintf(path, PATH_MAX, "%s", TIMESTAMP_FILE);
 
-    fp = fopen(path, "r");
+    fp = wfopen(path, "r");
 
     if (!fp) {
         return 0;
