@@ -61,5 +61,8 @@ decoders:
   # Service decoders
   - decoder/syslog/0
 
+  # Cloud decoders
+  - decoder/azure_base_decoder/0
+
 outputs:
   - output/file-output/0
