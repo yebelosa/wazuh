@@ -32,6 +32,7 @@ struct Options
     std::vector<std::string> assetTrace;
     char protocolQueue;
     std::string protocolLocation;
+    std::string inputFile;
 };
 void run(const Options& options);
 

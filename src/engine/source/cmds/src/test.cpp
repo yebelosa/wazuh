@@ -24,6 +24,9 @@
 #include "registry.hpp"
 #include "server/wazuhStreamProtocol.hpp"
 
+#include <fstream>
+#include <sstream>
+
 namespace
 {
 std::atomic<bool> gs_doRun = true;
@@ -226,14 +229,36 @@ void run(const Options& options)
     // TODO: fix logger
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+    bool bIsLiveTesting = options.inputFile != "NULL";
+
+    std::ifstream infile;
+
+    if (bIsLiveTesting) 
+    {
+        infile.open(options.inputFile, std::ifstream::in);
+        gs_doRun = infile.good();
+    }
     // Stdin loop
     while (gs_doRun)
     {
         std::cout << std::endl << std::endl << "Enter a log in single line (Crtl+C to exit):" << std::endl << std::endl;
         std::string line;
-        std::getline(std::cin, line);
-        if (line.empty())
+        if (bIsLiveTesting)
         {
+            std::getline(infile, line);
+        }
+        else
+        {
+            std::getline(std::cin, line);
+        }
+
+        if (!bIsLiveTesting && line.empty())
+        {
+            continue;
+        }
+        if (bIsLiveTesting && line == "END")
+        {
+            gs_doRun = false;
             continue;
         }
         try
@@ -355,6 +380,14 @@ void configure(CLI::App_p app)
                      "Sets the logging level. 0 = Debug, 1 = Info, 2 = Warning, 3 = Error.")
         ->default_val(ENGINE_LOG_LEVEL)
         ->check(CLI::Range(0, 3));
+
+    // Protocol location
+    logtestApp
+        ->add_option("-u, --use_file", 
+                     options->inputFile,
+                    "Set the Live input file path")
+        ->default_val("NULL");
+
 
     // Debug levels
     auto debug = logtestApp->add_flag("-d, --debug",
