@@ -63,6 +63,7 @@ decoders:
 
   # Cloud decoders
   - decoder/azure_base_decoder/0
+  - decoder/azure_SignInLogs/0
 
 outputs:
   - output/file-output/0

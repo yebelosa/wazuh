@@ -1485,5 +1485,9 @@
   "vulnerability.score.environmental": "float",
   "vulnerability.score.temporal": "float",
   "vulnerability.score.version": "keyword",
-  "vulnerability.severity": "keyword"
+  "vulnerability.severity": "keyword",
+  "azure.subscription_id": "keyword",
+  "azure.resource.group": "keyword",
+  "azure.resource.provider": "keyword",
+  "azure.tenant_id": "keyword"
 }
