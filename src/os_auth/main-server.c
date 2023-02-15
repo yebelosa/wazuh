@@ -153,7 +153,6 @@ int main(int argc, char **argv)
     bio_err = 0;
 
     // Get options
-
     {
         int c;
         int use_pass = 0;
@@ -232,7 +231,12 @@ int main(int argc, char **argv)
                     if (!optarg) {
                         merror_exit("-%c needs an argument", c);
                     }
-                    ciphers = optarg;
+                    else{
+                        if(w_str_is_number(optarg)){
+                            merror_exit("-%c needs a valid SSL cipher", c); 
+                        }
+                        ciphers = optarg;
+                    }
                     break;
 
                 case 'v':
@@ -281,9 +285,14 @@ int main(int argc, char **argv)
                         merror_exit("-%c needs an argument", c);
                     }
 
-                    generate_certificate = true;
-                    if (snprintf(cert_val, OS_SIZE_32 + 1, "%s", optarg) > OS_SIZE_32) {
-                        mwarn("-%c argument exceeds %d bytes. Certificate validity info truncated", c, OS_SIZE_32);
+                    if(w_str_is_number(optarg)){
+                        generate_certificate = true;
+                        if (snprintf(cert_val, OS_SIZE_32 + 1, "%s", optarg) > OS_SIZE_32) {
+                            mwarn("-%c argument exceeds %d bytes. Certificate validity info truncated", c, OS_SIZE_32);
+                        }
+                    }
+                    else{
+                        merror_exit("-%c needs a numeric argument", c);   
                     }
                     break;
 
@@ -291,10 +300,15 @@ int main(int argc, char **argv)
                     if (!optarg) {
                         merror_exit("-%c needs an argument", c);
                     }
-
-                    generate_certificate = true;
-                    if (snprintf(cert_key_bits, OS_SIZE_32 + 1, "%s", optarg) > OS_SIZE_32) {
-                        mwarn("-%c argument exceeds %d bytes. Certificate key size info truncated", c, OS_SIZE_32);
+                    
+                    if(w_str_is_number(optarg)){
+                        generate_certificate = true;
+                        if (snprintf(cert_key_bits, OS_SIZE_32 + 1, "%s", optarg) > OS_SIZE_32) {
+                            mwarn("-%c argument exceeds %d bytes. Certificate key size info truncated", c, OS_SIZE_32);
+                        }
+                    }
+                    else{
+                        merror_exit("-%c needs a numeric argument", c);
                     }
                     break;
 
@@ -336,6 +350,7 @@ int main(int argc, char **argv)
                     break;
             }
         }
+
 
         if (generate_certificate) {
             // Sanitize parameters
