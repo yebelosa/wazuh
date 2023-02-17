@@ -2030,11 +2030,9 @@ char **expand_win32_wildcards(const char *path) {
                 long unsigned errcode = GetLastError();
                 if (errcode == 2) {
                     mdebug2("No file that matches %s.", pattern);
-                }
-                else if (errcode == 3) {
+                } else if (errcode == 3) {
                     mdebug2("No folder that matches %s.", pattern);
-                }
-                else {
+                } else {
                     mdebug2("FindFirstFile failed (%lu) - '%s'\n", errcode, pattern);
                 }
 
