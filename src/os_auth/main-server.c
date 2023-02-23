@@ -238,7 +238,7 @@ int main(int argc, char **argv)
                     }
                     else {
                         if (w_str_is_number(optarg)) {
-                            merror_exit("-%c needs a valid SSL cipher", c); 
+                            merror_exit("-%c needs a valid list of SSL ciphers", c); 
                         }
                         ciphers = optarg;
                     }
