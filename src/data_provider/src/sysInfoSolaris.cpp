@@ -11,6 +11,11 @@
 #include <fstream>
 #include <sys/utsname.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <procfs.h>
+#include <limits.h>
+#include <grp.h>
+#include <pwd.h>
 
 #include "osinfo/sysOsParsers.h"
 #include "sharedDefs.h"
@@ -29,6 +34,7 @@
 
 constexpr auto SUN_APPS_PATH {"/var/sadm/pkg/"};
 
+const auto KBYTES_PER_PAGE { sysconf(_SC_PAGESIZE) / 1024 };
 
 static void getOsInfoFromUname(nlohmann::json& info)
 {
@@ -49,6 +55,111 @@ static void getOsInfoFromUname(nlohmann::json& info)
     }
 }
 
+// cache's data type and store
+using MapCache = std::map<int, std::string>;
+static MapCache groupNameCache;
+static MapCache userNameCache;
+
+static nlohmann::json getProcessInfo(std::string processName)
+{
+    // open the files needed to extract info
+    std::ifstream ifInfo   { WM_SYS_PROC_DIR + processName + "/psinfo", std::ios::binary };
+    std::ifstream ifStatus { WM_SYS_PROC_DIR + processName + "/status", std::ios::binary };
+    std::ifstream ifCred   { WM_SYS_PROC_DIR + processName + "/cred", std::ios::binary };
+
+    // a relevant info is not available, get out!
+    if (!ifInfo.is_open())
+    {
+        return nlohmann::json();
+    }
+
+    // Group names cached
+    auto getGroupName = [](const auto& key)
+    {
+        try
+        {
+            return groupNameCache.at(key);
+        }
+        catch(const std::out_of_range)
+        {
+            struct group *grent {getgrgid(key)};
+            return (groupNameCache[key] = grent->gr_name);
+        }
+    };
+
+    // User names cached
+    auto getUserName = [](const auto& key)
+    {
+        try
+        {
+            return userNameCache.at(key);
+        }
+        catch(const std::out_of_range)
+        {
+            struct passwd *pwent {getpwuid(key)};
+            return (userNameCache[key] = pwent->pw_name);
+        }
+    };
+
+    // the relevant info is read
+    psinfo_t info;
+    ifInfo.read(reinterpret_cast<char*>(&info), sizeof info);
+
+    // init the supplementary structs
+    pstatus_t status;
+    std::memset(&status, 0, sizeof status);
+
+    prcred_t cred;
+    std::memset(&cred, 0, sizeof cred);
+
+    // try to read the supplementary data
+    ifStatus.read(reinterpret_cast<char*>(&status), sizeof status);
+    ifCred.read(reinterpret_cast<char*>(&cred), sizeof cred);
+
+    nlohmann::json jsProcessInfo {};
+    jsProcessInfo["pid"]        = std::to_string(info.pr_pid);
+    jsProcessInfo["name"]       = std::string(info.pr_fname);
+    jsProcessInfo["state"]      = std::string(1, info.pr_lwp.pr_sname);
+    jsProcessInfo["ppid"]       = info.pr_ppid;
+    jsProcessInfo["utime"]      = status.pr_utime.tv_sec;
+    jsProcessInfo["stime"]      = status.pr_stime.tv_sec;
+
+    // command and args splited
+    const char* pargs { std::strpbrk(info.pr_psargs, " ") };
+    jsProcessInfo["argvs"]      = pargs ? ++pargs : "";
+    jsProcessInfo["cmd"]        = std::strtok(info.pr_psargs, " ");
+
+    jsProcessInfo["euser"]      = getUserName(info.pr_euid);
+    jsProcessInfo["ruser"]      = getUserName(info.pr_uid);
+    jsProcessInfo["suser"]      = getUserName(cred.pr_suid);
+    jsProcessInfo["egroup"]     = getGroupName(info.pr_egid);
+    jsProcessInfo["rgroup"]     = getGroupName(cred.pr_rgid);
+    jsProcessInfo["sgroup"]     = getGroupName(cred.pr_sgid);
+
+    // I'm not a zombie
+    if (info.pr_lwp.pr_sname != 'Z')
+    {
+        jsProcessInfo["priority"] = info.pr_lwp.pr_pri;
+        if (info.pr_lwp.pr_oldpri != 0)
+        {
+            jsProcessInfo["nice"] = info.pr_lwp.pr_nice;
+        }
+    }
+
+    jsProcessInfo["size"]       = info.pr_size / KBYTES_PER_PAGE;
+    jsProcessInfo["vm_size"]    = info.pr_size;
+    jsProcessInfo["resident"]   = info.pr_rssize / KBYTES_PER_PAGE;
+    jsProcessInfo["share"];     // discarded information is not easily obtained
+    jsProcessInfo["start_time"] = info.pr_lwp.pr_start.tv_sec;
+    jsProcessInfo["pgrp"]       = info.pr_pgid;
+    jsProcessInfo["session"]    = info.pr_sid;
+    jsProcessInfo["nlwp"]       = info.pr_nlwp + info.pr_nzomb;
+    jsProcessInfo["tgid"]       = info.pr_taskid;
+    jsProcessInfo["tty"]        = info.pr_ttydev == PRNODEV ? 0 : info.pr_ttydev;
+    jsProcessInfo["processor"]  = info.pr_lwp.pr_cpu;
+
+    return jsProcessInfo;
+}
 
 std::string SysInfo::getSerialNumber() const
 {
@@ -122,7 +233,15 @@ nlohmann::json SysInfo::getOsInfo() const
 }
 nlohmann::json SysInfo::getProcessesInfo() const
 {
-    return nlohmann::json();
+    nlohmann::json jsProcessesList{};
+
+    getProcessesInfo([&jsProcessesList](nlohmann::json & processInfo)
+    {
+        // Append the current json process object to the list of processes
+        jsProcessesList.push_back(processInfo);
+    });
+
+    return jsProcessesList;
 }
 nlohmann::json SysInfo::getNetworks() const
 {
@@ -201,9 +320,20 @@ nlohmann::json SysInfo::getPorts() const
 {
     return nlohmann::json();
 }
-void SysInfo::getProcessesInfo(std::function<void(nlohmann::json&)> /*callback*/) const
+void SysInfo::getProcessesInfo(std::function<void(nlohmann::json&)> callback) const
 {
-    // TODO
+    const auto procfiles { Utils::enumerateDir(WM_SYS_PROC_DIR) };
+
+    for (const auto& procfile : procfiles)
+    {
+        if (procfile[0] == '.')
+        {
+            continue;
+        }
+
+        auto processInfo = getProcessInfo(procfile);
+        callback(processInfo);
+    }
 }
 
 void SysInfo::getPackages(std::function<void(nlohmann::json&)> callback) const
