@@ -299,10 +299,10 @@ endif # Linux
 else
 		SHARED=dll
 		DEFINES_EVENTCHANNEL=-D_WIN32_WINNT=0x600
-		OSSEC_CFLAGS+=-pthread
-		OSSEC_LDFLAGS+=-pthread
+		OSSEC_CFLAGS+=-Wl,-l:libwinpthread-1.lib -L win32/ -Wl,--allow-multiple-definition -pthread
+		OSSEC_LDFLAGS+=-Wl,-l:libwinpthread-1.lib -L win32/ -Wl,--allow-multiple-definition -pthread
 		OSSEC_LDFLAGS+=-Wl,--allow-multiple-definition
-		AR_LDFLAGS+=-pthread
+		AR_LDFLAGS+=-Wl,-l:libwinpthread-1.lib -L win32/ -Wl,--allow-multiple-definition -pthread
 		PRECOMPILED_OS:=windows
 endif # winagent
 
@@ -824,7 +824,7 @@ win32/syscollector: win32/shared_modules win32/sysinfo
 
 win32/libwinpthread-1.dll: ${WIN_PTHREAD_DLL}
 	$(DLLTOOL) ${WIN_PTHREAD_DLL} -z $(WIN_PTHREAD_DEF) --export-all-symbols
-	$(DLLTOOL) --input-def $(WIN_PTHREAD_DEF) --output-delaylib win32/$(WAZUHEXT_LIB) --dllname ${WIN_PTHREAD_DLL}
+	$(DLLTOOL) --input-def $(WIN_PTHREAD_DEF) --output-delaylib win32/$(WIN_PTHREAD_LIB) --dllname ${WIN_PTHREAD_DLL}
 	cp $< $@
 
 ####################
@@ -1716,7 +1716,6 @@ else
 ifeq (${TARGET}, winagent)
 $(WAZUHEXT_LIB): libwazuhext.$(SHARED) $(WAZUHEXT_LIB_DEF)
 	$(DLLTOOL) --input-def $(WAZUHEXT_LIB_DEF) --output-delaylib $(WAZUHEXT_LIB) --dllname libwazuhext.$(SHARED)
-	echo ""
 
 libwazuhext.$(SHARED): $(EXTERNAL_LIBS)
 	$(OSSEC_SHARED) $(OSSEC_CFLAGS) -o $@ -static-libgcc -Wl,--export-all-symbols -Wl,--whole-archive $^ -Wl,--no-whole-archive ${OSSEC_LIBS}
