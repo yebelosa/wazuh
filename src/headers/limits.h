@@ -36,19 +36,32 @@ limits_t *init_limits(unsigned int eps, unsigned int timeframe);
 
 /**
  * @brief Update and validate limits
+ * 
+ * @param limits Pointer to the limits_t struct to freed.
  */
-void update_limits(void);
+void update_limits(limits_t *limits);
 
 /**
  * @brief Get a credit to process an event
+ * 
+ * @param limits Pointer to the limits_t struct to freed.
  */
-void get_eps_credit(void);
+void get_eps_credit(limits_t *limits);
 
 /**
  * @brief Check if the limit has been reached
+ * 
+ * @param limits Pointer to the limits_t struct to freed.
  * @param value store the current available credits
  * @return true if limit reached, false otherwise
  */
-bool limit_reached(unsigned int *value);
+bool limit_reached(limits_t *limits, unsigned int *value);
+
+/**
+ * @brief Initialize a limits_t struct with the given eps and timeframe settings.
+ *
+ * @param limits Pointer to the limits_t struct to freed.
+ */
+void free_limits(limits_t *limits);
 
 #endif /* LIMITS_H */

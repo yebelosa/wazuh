@@ -16,76 +16,69 @@
  * This is a private function.
  * @param credits to increase.
  */
-void generate_eps_credits(unsigned int credits);
+void generate_eps_credits(limits_t *limits, unsigned int credits);
 
 /**
  * @brief Increments the current cell eps counter
  *
  * This is a private function.
  */
-void increase_event_counter(void);
+void increase_event_counter(limits_t *limits);
 
-/** Global definitions **/
-limits_t limits;
+limits_t *init_limits(unsigned int eps, unsigned int timeframe) {
+    limits_t *limits = NULL;
+    os_malloc(sizeof(limits_t), limits);
 
-bool load_limits(unsigned int eps, unsigned int timeframe) {
     if (eps > 0 && timeframe > 0) {
+        limits->eps = eps;
+        limits->timeframe = timeframe;
+        limits->current_cell = 0;
+        limits->limit_eps_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-        limits_t *limits;
-        os_malloc(sizeof(limits_t), limits);
-        v->vector = (char **)malloc(initialSize * sizeof(char *));
-        v->used = 0;
-        v->size = initialSize;
-        return v;
+        os_calloc(limits->timeframe, sizeof(unsigned int), limits->circ_buf);
 
-        limits.eps = eps;
-        limits.timeframe = timeframe;
-        limits.current_cell = 0;
+        sem_init(&limits->credits_eps_semaphore, 0, limits->eps * limits->timeframe);
 
-        os_calloc(limits.timeframe, sizeof(unsigned int), limits.circ_buf);
-
-        sem_init(&limits.credits_eps_semaphore, 0, limits.eps * limits.timeframe);
-
-        limits.enabled = true;
+        limits->enabled = true;
         minfo("EPS limit enabled, EPS: '%d', timeframe: '%d'", eps, timeframe);
     } else {
-        limits.enabled = false;
+        limits->enabled = false;
         minfo("EPS limit disabled");
     }
     
-    return limits.enabled;
+    return limits;
 }
 
-void update_limits(void) {
-    if (limits.enabled) {
-        w_mutex_lock(&limits.limit_eps_mutex);
+void update_limits(limits_t *limits) {
+    if (limits->enabled) {
+        w_mutex_lock(&limits->limit_eps_mutex);
 
-        if (limits.current_cell < limits.timeframe - 1) {
-            limits.current_cell++;
+        if (limits->current_cell < limits->timeframe - 1) {
+            limits->current_cell++;
         } else {
-            if (limits.circ_buf[0]) {
-                generate_eps_credits(limits.circ_buf[0]);
+            if (limits->circ_buf[0]) {
+                generate_eps_credits(limits);
             }
-            memmove(limits.circ_buf, limits.circ_buf + 1, (limits.timeframe - 1) * sizeof(unsigned int));
-            limits.circ_buf[limits.current_cell] = 0;
+            memmove(limits->circ_buf, limits->circ_buf + 1, (limits->timeframe - 1) * sizeof(unsigned int));
+            limits->circ_buf[limits->current_cell] = 0;
         }
 
-        w_mutex_unlock(&limits.limit_eps_mutex);
+        w_mutex_unlock(&limits->limit_eps_mutex);
     }
 }
 
-void get_eps_credit(void) {
-    if (limits.enabled) {
-        sem_wait(&limits.credits_eps_semaphore);
+void get_eps_credit(limits_t *limits) {
+    if (limits->enabled) {
+        sem_wait(&limits->credits_eps_semaphore);
         increase_event_counter();
     }
 }
 
-bool limit_reached(unsigned int *value) {
-    if (limits.enabled) {
+bool limit_reached(limits_t *limits, unsigned int *value) {
+    if (limits->enabled) {
         int credits = 0;
 
-        sem_getvalue(&limits.credits_eps_semaphore, &credits);
+        sem_getvalue(&limits->credits_eps_semaphore, &credits);
 
         if (value) {
             *value = credits >= 0 ? (unsigned int)credits : 0;
@@ -99,14 +92,23 @@ bool limit_reached(unsigned int *value) {
     return false;
 }
 
-STATIC void generate_eps_credits(unsigned int credits) {
-    for(unsigned int i = 0; i < credits; i++) {
-        sem_post(&limits.credits_eps_semaphore);
+void free_limits(limits_t *limits) {
+    if (limits->enabled) {
+        os_free(limits->timeframe);
+    }
+    os_free(limits);
+
+    return false;
+}
+
+STATIC void generate_eps_credits(limits_t *limits) {
+    for(unsigned int i = 0; i < limits->circ_buf[0]; i++) {
+        sem_post(&limits->credits_eps_semaphore);
     }
 }
 
-STATIC void increase_event_counter(void) {
-    w_mutex_lock(&limits.limit_eps_mutex);
-    limits.circ_buf[limits.current_cell]++;
-    w_mutex_unlock(&limits.limit_eps_mutex);
+STATIC void increase_event_counter(limits_t *limits) {
+    w_mutex_lock(&limits->limit_eps_mutex);
+    limits->circ_buf[limits->current_cell]++;
+    w_mutex_unlock(&limits->limit_eps_mutex);
 }
