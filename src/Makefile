@@ -299,10 +299,10 @@ endif # Linux
 else
 		SHARED=dll
 		DEFINES_EVENTCHANNEL=-D_WIN32_WINNT=0x600
-		OSSEC_CFLAGS+=-Wl,-l:libwinpthread-1.lib -L win32/ -Wl,--allow-multiple-definition -pthread
-		OSSEC_LDFLAGS+=-Wl,-l:libwinpthread-1.lib -L win32/ -Wl,--allow-multiple-definition -pthread
-		OSSEC_LDFLAGS+=-Wl,--allow-multiple-definition
-		AR_LDFLAGS+=-Wl,-l:libwinpthread-1.lib -L win32/ -Wl,--allow-multiple-definition -pthread
+		OSSEC_CFLAGS+=-Wl,-l:$(WIN_PTHREAD_LIB) -Wl,-L$(WAZUH_LIB_OUTPUT_PATH) -Wl,--allow-multiple-definition
+		OSSEC_LDFLAGS+=-Wl,-l:$(WIN_PTHREAD_LIB) -Wl,-L$(WAZUH_LIB_OUTPUT_PATH) -Wl,--allow-multiple-definition
+		OSSEC_LDFLAGS+=-Wl,--allow-multiple-definition -Wl,-l:$(WIN_PTHREAD_LIB) -Wl,-L$(WAZUH_LIB_OUTPUT_PATH)
+		AR_LDFLAGS+=-Wl,-l:$(WIN_PTHREAD_LIB) -Wl,-l:$(WAZUHEXT_LIB) -Wl,-L. -Wl,-L$(WAZUH_LIB_OUTPUT_PATH) -Wl,--allow-multiple-definition
 		PRECOMPILED_OS:=windows
 endif # winagent
 
@@ -793,8 +793,8 @@ $(error Do not use 'winagent' directly, use 'TARGET=winagent')
 endif
 .PHONY: winagent
 winagent: external win32/libwinpthread-1.dll ${WAZUH_LIB_OUTPUT_PATH}${LIBGCC_S_NAME} ${WAZUH_LIB_OUTPUT_PATH}${LIBSTDCPP_NAME}
-	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -D_POSIX_C_SOURCE -DWIN32 -DPSAPI_VERSION=1" LIBS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -ladvapi32 -lkernel32 -lpsapi -lgdi32 -liphlpapi -lws2_32 -lcrypt32 -lwintrust"
-	#${MAKE} ${WINDOWS_ACTIVE_RESPONSES} CFLAGS="-DCLIENT -D_POSIX_C_SOURCE -DWIN32 -DPSAPI_VERSION=1" LIBS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -ladvapi32 -lkernel32 -lpsapi -lgdi32 -liphlpapi -lws2_32 -lcrypt32"
+	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -D_POSIX_C_SOURCE -DWIN32 -DPSAPI_VERSION=1" LIBS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -ladvapi32 -lkernel32 -lpsapi -lgdi32 -liphlpapi -lws2_32 -lcrypt32 -lwintrust -l:$(WIN_PTHREAD_LIB)"
+	#${MAKE} ${WINDOWS_ACTIVE_RESPONSES} CFLAGS="-DCLIENT -D_POSIX_C_SOURCE -DWIN32 -DPSAPI_VERSION=1" LIBS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -ladvapi32 -lkernel32 -lpsapi -lgdi32 -liphlpapi -lws2_32 -lcrypt32 -l$(WAZUHEXT_LIB)"
 	cd win32/ && ./unix2dos.pl ossec.conf > default-ossec.conf
 	cd win32/ && ./unix2dos.pl help.txt > help_win.txt
 	cd win32/ && ./unix2dos.pl ../../etc/internal_options.conf > internal_options.conf
@@ -823,8 +823,8 @@ win32/syscollector: win32/shared_modules win32/sysinfo
 	cd ${SYSCOLLECTOR} && mkdir -p build && cd build && cmake ${CMAKE_OPTS} ${SYSCOLLECTOR_TEST} ${SYSCOLLECTOR_RELEASE_TYPE} .. && ${MAKE}
 
 win32/libwinpthread-1.dll: ${WIN_PTHREAD_DLL}
-	$(DLLTOOL) ${WIN_PTHREAD_DLL} -z $(WIN_PTHREAD_DEF) --export-all-symbols
-	$(DLLTOOL) --input-def $(WIN_PTHREAD_DEF) --output-delaylib win32/$(WIN_PTHREAD_LIB) --dllname ${WIN_PTHREAD_DLL}
+	$(DLLTOOL) ${WIN_PTHREAD_DLL} -z  $(WAZUH_LIB_OUTPUT_PATH)$(WIN_PTHREAD_DEF) --export-all-symbols
+	$(DLLTOOL) --input-def $(WAZUH_LIB_OUTPUT_PATH)$(WIN_PTHREAD_DEF) --output-delaylib win32/$(WIN_PTHREAD_LIB) --dllname ${WIN_PTHREAD_DLL}
 	cp $< $@
 
 ####################
@@ -1717,8 +1717,8 @@ ifeq (${TARGET}, winagent)
 $(WAZUHEXT_LIB): libwazuhext.$(SHARED) $(WAZUHEXT_LIB_DEF)
 	$(DLLTOOL) --input-def $(WAZUHEXT_LIB_DEF) --output-delaylib $(WAZUHEXT_LIB) --dllname libwazuhext.$(SHARED)
 
-libwazuhext.$(SHARED): $(EXTERNAL_LIBS)
-	$(OSSEC_SHARED) $(OSSEC_CFLAGS) -o $@ -static-libgcc -Wl,--export-all-symbols -Wl,--whole-archive $^ -Wl,--no-whole-archive ${OSSEC_LIBS}
+libwazuhext.$(SHARED): $(EXTERNAL_LIBS) win32/libwinpthread-1.dll
+	$(OSSEC_SHARED) $(OSSEC_CFLAGS) -o $@ -static-libgcc -Wl,--export-all-symbols -Wl,-l:$(WIN_PTHREAD_LIB) -Wl,-L$(WAZUH_LIB_OUTPUT_PATH) -Wl,--whole-archive $^ -Wl,--no-whole-archive ${OSSEC_LIBS}
 
 $(WAZUHEXT_LIB_DEF): libwazuhext.$(SHARED)
 	$(DLLTOOL) libwazuhext.$(SHARED) -z $(WAZUHEXT_LIB_DEF) --export-all-symbols
