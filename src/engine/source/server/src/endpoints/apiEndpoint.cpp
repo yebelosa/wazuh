@@ -61,8 +61,7 @@ void APIEndpoint::connectionHandler(PipeHandle& handle)
     timer->on<TimerEvent>(
         [client](const auto&, auto& handler)
         {
-            WAZUH_LOG_INFO("Engine API endpoint: Connection timeout with client ({}).",
-                           client->peer());
+            LOG_INFO("Engine API endpoint: Connection timeout with client ({}).", client->peer());
             client->close();
             handler.close();
         });
@@ -70,12 +69,11 @@ void APIEndpoint::connectionHandler(PipeHandle& handle)
     client->on<ErrorEvent>(
         [](const ErrorEvent& event, PipeHandle& client)
         {
-            WAZUH_LOG_ERROR("Engine API endpoint: Connection error with client ({}): "
-                            "code=[{}]; name=[{}]; message=[{}].",
-                            client.peer(),
-                            event.code(),
-                            event.name(),
-                            event.what());
+            LOG_ERROR("Engine API endpoint: Connection error with client ({}): code=[{}]; name=[{}]; message=[{}].",
+                      client.peer(),
+                      event.code(),
+                      event.name(),
+                      event.what());
         });
 
     client->on<DataEvent>(
@@ -113,9 +111,7 @@ void APIEndpoint::connectionHandler(PipeHandle& handle)
                     catch (const std::exception& e)
                     {
                         wresponse = api::WazuhResponse::unknownError();
-                        WAZUH_LOG_ERROR("Engine API endpoint: Error with client ({}): {}",
-                                        client.peer(),
-                                        e.what());
+                        LOG_ERROR("Engine API endpoint: Error with client ({}): {}", client.peer(), e.what());
                     }
 
                     auto [buffer, size] = addSecureHeader(wresponse.toString());
@@ -124,10 +120,9 @@ void APIEndpoint::connectionHandler(PipeHandle& handle)
             }
             else
             {
-                WAZUH_LOG_WARN(
-                    "Engine API endpoint: Some data could not be processed from client "
-                    "({}).",
-                    client.peer());
+                LOG_WARNING("Engine API endpoint: Some data could not be processed from client "
+                            "({}).",
+                            client.peer());
                 // TODO: are we sure that it is always due to an invalid size?
                 auto invalidSize = api::WazuhResponse::invalidSize();
                 auto [buffer, size] {addSecureHeader(invalidSize.toString())};
@@ -140,21 +135,16 @@ void APIEndpoint::connectionHandler(PipeHandle& handle)
     client->on<EndEvent>(
         [timer](const EndEvent&, PipeHandle& client)
         {
-            WAZUH_LOG_INFO("Engine API endpoint: Closing connection of client ({}).",
-                           client.peer());
+            LOG_INFO("Engine API endpoint: Closing connection of client ({}).", client.peer());
             timer->close();
             client.close();
         });
 
-    client->on<CloseEvent>(
-        [](const CloseEvent& event, PipeHandle& client)
-        {
-            WAZUH_LOG_INFO("Engine API endpoint: Connection closed of client ({}).",
-                           client.peer());
-        });
+    client->on<CloseEvent>([](const CloseEvent& event, PipeHandle& client)
+                           { LOG_INFO("Engine API endpoint: Connection closed of client ({}).", client.peer()); });
 
     handle.accept(*client);
-    WAZUH_LOG_INFO("Engine API endpoint: Client accepted: {}", client->peer());
+    LOG_INFO("Engine API endpoint: Client accepted: {}", client->peer());
 
     timer->start(TimerHandle::Time {CONNECTION_TIMEOUT_MSEC},
                  TimerHandle::Time {CONNECTION_TIMEOUT_MSEC});
@@ -172,21 +162,20 @@ APIEndpoint::APIEndpoint(const std::string& config,
     m_handle->on<ErrorEvent>(
         [](const ErrorEvent& event, PipeHandle& handle)
         {
-            WAZUH_LOG_ERROR("Engine API endpoint: Error on endpoint ({}): code=[{}]; "
-                            "name=[{}]; message=[{}].",
-                            handle.sock(),
-                            event.code(),
-                            event.name(),
-                            event.what());
+            LOG_ERROR("Engine API endpoint: Error on endpoint ({}): code=[{}]; name=[{}]; message=[{}].",
+                      handle.sock(),
+                      event.code(),
+                      event.name(),
+                      event.what());
         });
 
     m_handle->on<ListenEvent>(
         [this](const ListenEvent& event, PipeHandle& handle)
         {
             // TODO check if the parameter is correct
-            WAZUH_LOG_INFO("Engine API endpoint: Stablishing a new connection with peer "
-                           "({}).",
-                           handle.peer());
+            LOG_INFO("Engine API endpoint: Stablishing a new connection with peer "
+                     "({}).",
+                     handle.peer());
             connectionHandler(handle);
         });
 
@@ -194,11 +183,10 @@ APIEndpoint::APIEndpoint(const std::string& config,
         [](const CloseEvent& event, PipeHandle& handle)
         {
             // TODO check if the parameter is correct
-            WAZUH_LOG_INFO("Engine API endpoint: Closing connection with peer ({}).",
-                           handle.peer());
+            LOG_INFO("Engine API endpoint: Closing connection with peer ({}).", handle.peer());
         });
 
-    WAZUH_LOG_INFO("Engine API endpoint: Endpoint configured: [{}]", config);
+    LOG_INFO("Engine API endpoint: Endpoint configured: [{}]", config);
 }
 
 void APIEndpoint::configure()
@@ -225,11 +213,11 @@ void APIEndpoint::close()
         m_loop->run();
         m_loop->clear();
         m_loop->close();
-        WAZUH_LOG_INFO("Engine API endpoint: All the endpoints were closed.");
+        LOG_INFO("Engine API endpoint: All the endpoints were closed.");
     }
     else
     {
-        WAZUH_LOG_INFO("Engine API endpoint: Loop is already closed.");
+        LOG_INFO("Engine API endpoint: Loop is already closed.");
     }
 }
 

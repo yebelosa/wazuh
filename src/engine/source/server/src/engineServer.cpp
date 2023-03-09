@@ -50,9 +50,7 @@ EngineServer::EngineServer(const std::string& apiEndpointPath,
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR(
-            "Engine server: An exception ocurred while building the server: {}",
-            e.what());
+        LOG_ERROR("Engine server: An exception ocurred while building the server: {}.", e.what());
         throw;
     }
 }
@@ -61,13 +59,12 @@ void EngineServer::run(void)
 {
     if (m_endpoints.size() > 0)
     {
-        WAZUH_LOG_INFO("Engine server: Starting...");
+        LOG_INFO("Engine server: Starting...");
         m_endpoints.begin()->second->run();
     }
     else
     {
-        WAZUH_LOG_WARN("Engine server: The server cannot be started, there are no "
-                       "endpoints configured.");
+        LOG_WARNING("Engine server: The server cannot be started, there are no endpoints configured.");
     }
 }
 

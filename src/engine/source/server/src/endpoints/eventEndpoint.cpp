@@ -158,11 +158,10 @@ static inline int bindUnixDatagramSocket(const char* path)
     // Set close-on-exec
     if (-1 == fcntl(socketFd, F_SETFD, FD_CLOEXEC))
     {
-        WAZUH_LOG_ERROR("Engine event endpoints: The flag `close-on-exec` cannot be set "
-                        "on datagram socket ({}): {} ({}).",
-                        path,
-                        strerror(errno),
-                        errno);
+        LOG_ERROR("Engine event endpoints: The flag `close-on-exec` cannot be set on datagram socket ({}): {} ({}).",
+                  path,
+                  strerror(errno),
+                  errno);
     }
 
     return (socketFd);
@@ -181,12 +180,12 @@ EventEndpoint::EventEndpoint(
     m_handle->on<ErrorEvent>(
         [this](const ErrorEvent& event, DatagramSocketHandle& datagramSocketHandle)
         {
-            WAZUH_LOG_ERROR("Engine event endpoints: Event error on datagram socket "
-                            "({}): code=[{}]; name=[{}]; message=[{}].",
-                            m_path,
-                            event.code(),
-                            event.name(),
-                            event.what());
+            LOG_ERROR("Engine event endpoints: Event error on datagram socket "
+                      "({}): code=[{}]; name=[{}]; message=[{}].",
+                      m_path,
+                      event.code(),
+                      event.name(),
+                      event.what());
         });
 
     std::shared_ptr<floodingFile> dumpFileHandler {nullptr};
@@ -203,10 +202,12 @@ EventEndpoint::EventEndpoint(
         }
         else
         {
-            WAZUH_LOG_DEBUG("Engine event endpoints: Flooding file '{}' are ready.", *pathFloodedFile);
+            LOG_DEBUG("Engine event endpoints: Flooding file '{}' are ready.", *pathFloodedFile);
         }
-    } else {
-        WAZUH_LOG_INFO("Engine event endpoints: Flooding file is not enabled.");
+    }
+    else
+    {
+        LOG_INFO("Engine event endpoints: Flooding file is not enabled.");
     }
 
     m_handle->on<DatagramSocketEvent>(
@@ -220,7 +221,7 @@ EventEndpoint::EventEndpoint(
             }
             catch (const std::exception& e)
             {
-                WAZUH_LOG_WARN("Engine event endpoint: Error parsing event: '{}' (discarting...)", e.what());
+                LOG_WARNING("Engine event endpoint: Error parsing event: '{}' (discarting...)", e.what());
                 return;
             }
 
@@ -258,11 +259,10 @@ EventEndpoint::EventEndpoint(
 
     if (0 >= m_socketFd)
     {
-        WAZUH_LOG_ERROR("Engine event endpoints: It was not possible to open the "
-                        "datagram socket ({}): {} ({}).",
-                        m_path,
-                        strerror(errno),
-                        errno);
+        LOG_ERROR("Engine event endpoints: It was not possible to open the datagram socket ({}): {} ({}).",
+                  m_path,
+                  strerror(errno),
+                  errno);
     }
 }
 
@@ -275,10 +275,9 @@ void EventEndpoint::configure(void)
     }
     else
     {
-        WAZUH_LOG_ERROR("Engine event endpoints: The file descriptor of the datagram "
-                        "socket ({}) is invalid ({}).",
-                        m_path,
-                        m_socketFd);
+        LOG_ERROR("Engine event endpoints: The file descriptor of the datagram socket ({}) is invalid ({}).",
+                  m_path,
+                  m_socketFd);
     }
 }
 
@@ -299,11 +298,11 @@ void EventEndpoint::close(void)
         m_loop->run();
         m_loop->clear();
         m_loop->close();
-        WAZUH_LOG_INFO("Engine event endpoints: All the endpoints were closed.");
+        LOG_INFO("Engine event endpoints: All the endpoints were closed.");
     }
     else
     {
-        WAZUH_LOG_INFO("Engine event endpoints: Loop is already closed.");
+        LOG_INFO("Engine event endpoints: Loop is already closed.");
     }
 }
 

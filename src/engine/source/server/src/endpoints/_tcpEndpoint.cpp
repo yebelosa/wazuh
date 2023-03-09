@@ -42,7 +42,7 @@ void TCPEndpoint::connectionHandler(TCPHandle& handle)
     timer->on<TimerEvent>(
         [client](const auto&, auto& handler)
         {
-            WAZUH_LOG_INFO("TCP TimerEvent: Timeout for connection.");
+            LOG_INFO("TCP TimerEvent: Timeout for connection.");
             client->close();
             handler.close();
         });
@@ -50,13 +50,13 @@ void TCPEndpoint::connectionHandler(TCPHandle& handle)
     client->on<ErrorEvent>(
         [](const ErrorEvent& event, TCPHandle& client)
         {
-            WAZUH_LOG_ERROR("TCP ErrorEvent: endpoint[{}:{}] error: code=[{}]; "
-                            "name=[{}]; message=[{}]",
-                            client.peer().ip,
-                            client.peer().port,
-                            event.code(),
-                            event.name(),
-                            event.what());
+            LOG_ERROR("TCP ErrorEvent: endpoint[{}:{}] error: code=[{}]; "
+                      "name=[{}]; message=[{}]",
+                      client.peer().ip,
+                      client.peer().port,
+                      event.code(),
+                      event.name(),
+                      event.what());
         });
 
     client->on<DataEvent>(
@@ -74,9 +74,9 @@ void TCPEndpoint::connectionHandler(TCPHandle& handle)
             }
             else
             {
-                WAZUH_LOG_ERROR("TCP DataEvent: endpoint[{}] error: Data could "
-                                "not be processed.",
-                                m_path);
+                LOG_ERROR("TCP DataEvent: endpoint[{}] error: Data could "
+                          "not be processed.",
+                          m_path);
                 timer->close();
                 client.close();
             }
@@ -85,16 +85,16 @@ void TCPEndpoint::connectionHandler(TCPHandle& handle)
     client->on<EndEvent>(
         [timer](const EndEvent&, TCPHandle& client)
         {
-            WAZUH_LOG_INFO("TCP EndEvent: Terminating connection.");
+            LOG_INFO("TCP EndEvent: Terminating connection.");
             timer->close();
             client.close();
         });
 
     client->on<CloseEvent>([](const CloseEvent& event, TCPHandle& client)
-                           { WAZUH_LOG_INFO("TCP CloseEvent: Connection closed."); });
+                           { LOG_INFO("TCP CloseEvent: Connection closed."); });
 
     handle.accept(*client);
-    WAZUH_LOG_INFO("TCP ListenEvent: Client accepted.");
+    LOG_INFO("TCP ListenEvent: Client accepted.");
 
     timer->start(TimerHandle::Time {CONNECTION_TIMEOUT_MSEC},
                  TimerHandle::Time {CONNECTION_TIMEOUT_MSEC});
@@ -114,26 +114,25 @@ TCPEndpoint::TCPEndpoint(const std::string& config, ServerOutput& eventBuffer)
     m_handle->on<ErrorEvent>(
         [](const ErrorEvent& event, TCPHandle& handle)
         {
-            WAZUH_LOG_ERROR("TCP ErrorEvent: endpoint[{}:{}] error: code=[{}]; "
-                            "name=[{}]; message=[{}]",
-                            handle.sock().ip,
-                            handle.sock().port,
-                            event.code(),
-                            event.name(),
-                            event.what());
+            LOG_ERROR("TCP ErrorEvent: endpoint[{}:{}] error: code=[{}]; "
+                      "name=[{}]; message=[{}]",
+                      handle.sock().ip,
+                      handle.sock().port,
+                      event.code(),
+                      event.name(),
+                      event.what());
         });
 
     m_handle->on<ListenEvent>(
         [this](const ListenEvent& event, TCPHandle& handle)
         {
-            WAZUH_LOG_INFO("TCP ListenEvent: stablishing new connection.");
+            LOG_INFO("TCP ListenEvent: stablishing new connection.");
             connectionHandler(handle);
         });
 
-    m_handle->on<CloseEvent>([](const CloseEvent& event, TCPHandle& handle)
-                             { WAZUH_LOG_INFO("TCP CloseEvent."); });
+    m_handle->on<CloseEvent>([](const CloseEvent& event, TCPHandle& handle) { LOG_INFO("TCP CloseEvent."); });
 
-    WAZUH_LOG_INFO("TCP endpoint configured: [{}]", config);
+    LOG_INFO("TCP endpoint configured: [{}]", config);
 }
 
 void TCPEndpoint::run()

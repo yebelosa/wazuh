@@ -33,10 +33,9 @@ bool WazuhStreamProtocol::hasHeader()
         // TODO: Max message size config option
         if ((1 << 20) < m_pending)
         {
-            throw std::runtime_error(
-                fmt::format("Engine protocol handler: Invalid message. The size "
-                            "contained on the message header is probably wrong: {}",
-                            m_pending));
+            throw std::runtime_error(fmt::format("Engine protocol handler: Invalid message. The size contained on the "
+                                                 "message header is probably wrong: {}",
+                                                 m_pending));
         }
 
         retval = true;
@@ -66,9 +65,9 @@ std::optional<vector<string>> WazuhStreamProtocol::process(const char* data,
                 }
                 catch (std::exception& e)
                 {
-                    WAZUH_LOG_ERROR("Engine protocol handler: An error occurred while "
-                                    "trying to process a message's header: {}",
-                                    e.what());
+                    LOG_ERROR(
+                        "Engine protocol handler: An error occurred while trying to process a message's header: {}.",
+                        e.what());
                     return std::nullopt;
                 }
                 break;
@@ -88,19 +87,14 @@ std::optional<vector<string>> WazuhStreamProtocol::process(const char* data,
                     }
                     catch (std::exception& e)
                     {
-                        WAZUH_LOG_ERROR(
-                            "Engine protocol handler: Processing message error: {}",
-                            e.what());
+                        LOG_ERROR("Engine protocol handler: Processing message error: {}.", e.what());
                         return std::nullopt;
                     }
                     m_stage = 0;
                 }
                 break;
 
-            default:
-                WAZUH_LOG_ERROR("Engine protocol handler: Invalid stage state: {}",
-                                m_stage);
-                return std::nullopt;
+            default: LOG_ERROR("Engine protocol handler: Invalid stage state: {}.", m_stage); return std::nullopt;
         }
     }
 

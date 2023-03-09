@@ -42,7 +42,7 @@ Router::Router(std::shared_ptr<builder::Builder> builder, std::shared_ptr<store:
     if (std::holds_alternative<base::Error>(result))
     {
         const auto error = std::get<base::Error>(result);
-        WAZUH_LOG_DEBUG("Router: Routes table not found in store. Creating new table. {}", error.message);
+        LOG_DEBUG("Router: Routes table not found in store. Creating new table: {}.", error.message);
         m_store->add(ROUTES_TABLE_NAME, json::Json {"[]"});
         return;
     }
@@ -51,7 +51,7 @@ Router::Router(std::shared_ptr<builder::Builder> builder, std::shared_ptr<store:
         const auto table = std::get<json::Json>(result).getArray();
         if (!table.has_value())
         {
-            throw std::runtime_error("Can not get routes table from store. Invalid table format.");
+            throw std::runtime_error("Can not get routes table from store. Invalid table format");
         }
 
         for (const auto& jRoute : *table)
@@ -68,8 +68,7 @@ Router::Router(std::shared_ptr<builder::Builder> builder, std::shared_ptr<store:
             const auto err = addRoute(name.value(), priority.value(), filter.value(), target.value());
             if (err.has_value())
             {
-                WAZUH_LOG_WARN("Router: couldn't add route " + name.value() + " to the router: {}",
-                               err.value().message);
+                LOG_WARNING("Router: couldn't add route '{}' to the router: {}.", name.value(), err.value().message);
             }
         }
     }
@@ -77,7 +76,7 @@ Router::Router(std::shared_ptr<builder::Builder> builder, std::shared_ptr<store:
     if (getRouteTable().empty())
     {
         // Add default route
-        WAZUH_LOG_WARN("There is no environment loaded. Events will be written in disk once the queue is full.");
+        LOG_WARNING("There is no environment loaded. Events will be written in disk once the queue is full.");
     }
 };
 
@@ -179,7 +178,7 @@ std::vector<Router::Entry> Router::getRouteTable()
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Error getting route table: {}", e.what()); // Should never happen
+        LOG_ERROR("Error getting route table: {}.", e.what()); // This should never happen
     }
     lock.unlock();
 
@@ -301,7 +300,7 @@ std::optional<base::Error> Router::run(std::shared_ptr<concurrentQueue> queue)
                         }
                     }
                 }
-                WAZUH_LOG_DEBUG("Thread [{}] router finished.", i);
+                LOG_DEBUG("Thread '{}' router finished.", i);
             });
     };
 
@@ -321,7 +320,7 @@ void Router::stop()
     }
     m_threads.clear();
 
-    WAZUH_LOG_DEBUG("Router stopped.");
+    LOG_DEBUG("Router stopped.");
 }
 
 /********************************************************************
@@ -337,7 +336,7 @@ api::CommandFn Router::apiCallbacks()
 
         if (!action)
         {
-            response.message(R"(Missing "action" parameter)");
+            response.message("Missing 'action' parameter");
         }
         else if (action.value() == "set")
         {
@@ -380,19 +379,19 @@ api::WazuhResponse Router::apiSetRoute(const json::Json& params)
     const auto target = params.getString(JSON_PATH_TARGET);
     if (!name)
     {
-        response.message(R"(Error: Error: Missing "name" parameter)");
+        response.message("Error: Missing 'name' parameter");
     }
     else if (!priority)
     {
-        response.message(R"(Error: Error: Missing "priority" parameter)");
+        response.message("Error: Missing 'priority' parameter");
     }
     else if (!target)
     {
-        response.message(R"(Error: Error: Missing "target" parameter)");
+        response.message("Error: Missing 'target' parameter");
     }
     else if (!filter)
     {
-        response.message(R"(Error: Error: Missing "filter" parameter)");
+        response.message("Error: Missing 'filter' parameter");
     }
     else
     {
@@ -444,7 +443,7 @@ api::WazuhResponse Router::apiDeleteRoute(const json::Json& params)
     const auto name = params.getString(JSON_PATH_NAME);
     if (!name)
     {
-        response.message(R"(Error: Error: Missing "priority" parameter)");
+        response.message("Error: Missing 'priority' parameter");
     }
     else
     {
@@ -469,11 +468,11 @@ api::WazuhResponse Router::apiChangeRoutePriority(const json::Json& params)
 
     if (!name)
     {
-        response.message(R"(Error: Error: Missing "priority" parameter)");
+        response.message("Error: Missing 'priority' parameter");
     }
     else if (!priority)
     {
-        response.message(R"(Missing "priority" parameter)");
+        response.message("Missing 'priority' parameter");
     }
     else
     {
@@ -497,7 +496,7 @@ api::WazuhResponse Router::apiEnqueueEvent(const json::Json& params)
     const auto event = params.getString(JSON_PATH_EVENT);
     if (!event)
     {
-        response.message(R"(Error: Missing "event" parameter)");
+        response.message("Error: Missing 'event' parameter");
     }
     else
     {
@@ -545,7 +544,7 @@ void Router::dumpTableToStorage()
     const auto err = m_store->update(ROUTES_TABLE_NAME, tableToJson());
     if (err)
     {
-        WAZUH_LOG_ERROR("Error updating routes table: {}", err.value().message);
+        LOG_ERROR("Error updating routes table: {}.", err.value().message);
         exit(10);
         // TODO: throw exception and exit program (Review when the exit policy is implemented)
     }

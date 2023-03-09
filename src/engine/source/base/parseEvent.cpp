@@ -49,14 +49,12 @@ Event parseOssecEvent(const std::string& event)
 
     if (event.length() <= MINIMUM_EVENT_ALLOWED_LENGTH)
     {
-        throw std::runtime_error(
-            fmt::format("Invalid event format, event is too short ({})", event.length()));
+        throw std::runtime_error(fmt::format("Invalid event format, event is too short ({})", event.length()));
     }
 
     if (':' != event[1])
     {
-        throw std::runtime_error(fmt::format("Invalid event format, a colon was expected "
-                                             "to be right after the first character"));
+        throw std::runtime_error(fmt::format("Invalid event format, a colon was expected to be right after the first character"));
     }
 
     const int queue {event[0]};
@@ -114,7 +112,7 @@ Event parseOssecEvent(const std::string& event)
         catch (std::runtime_error& e)
         {
             throw fmt::format(
-                "An error occurred while parsing the \"location\" field of the event: {}",
+                "An error occurred while parsing the 'location' field of the event: {}",
                 e.what());
         }
 
@@ -153,8 +151,7 @@ Event parseOssecEvent(const std::string& event)
             }
             catch (std::runtime_error& e)
             {
-                throw fmt::format("An error occurred while parsing  the \"location\" "
-                                  "field of  the event: {}",
+                throw fmt::format("An error occurred while parsing  the 'location' field of  the event: {}",
                                   e.what());
             }
 
@@ -171,8 +168,7 @@ Event parseOssecEvent(const std::string& event)
             }
             catch (std::runtime_error& e)
             {
-                throw fmt::format("An error occurred while parsing the \"location\" "
-                                  "field of the event: {}",
+                throw fmt::format("An error occurred while parsing the 'location' field of the event: {}",
                                   e.what());
             }
             msgStartIndex = secondColonIdx + 1;
@@ -186,8 +182,7 @@ Event parseOssecEvent(const std::string& event)
     }
     catch (std::runtime_error& e)
     {
-        throw fmt::format("An error occurred while parsing the \"location\" field of  "
-                          "the event: {}",
+        throw fmt::format("An error occurred while parsing the 'location' field of the event: {}",
                           e.what());
     }
 

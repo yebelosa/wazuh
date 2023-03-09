@@ -80,6 +80,32 @@ void runStart(ConfHandler confManager)
         floodFile = floodFilePath;
     }
 
+    // Logging init
+
+    logging::LoggingConfig logConfig;
+    switch (logLevel)
+    {
+        case 0: logConfig.logLevel = "debug"; break;
+        case 1: logConfig.logLevel = "info"; break;
+        case 2: logConfig.logLevel = "warning"; break;
+        case 3: logConfig.logLevel = "error"; break;
+        default: logConfig.logLevel = "warning";
+    }
+
+    if (!logOutput.empty())
+    {
+        logConfig.filePath = logOutput.c_str();
+    }
+
+    logging::loggingInit(logConfig);
+
+    LOG_DEBUG("Logging configuration: filePath='{}', logLevel='{}', header='{}', flushInterval={}ms.",
+              logConfig.filePath,
+              logConfig.logLevel,
+              logConfig.headerFormat,
+              logConfig.flushInterval);
+    LOG_INFO("Logging initialized.");
+
     // KVDB config
     const auto kvdbPath = confManager->get<std::string>("server.kvdb_path");
 
@@ -96,7 +122,7 @@ void runStart(ConfHandler confManager)
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Invalid route priority '{}'", environment[1]);
+        LOG_ERROR("Invalid route priority '{}'.", environment[1]);
         exit(EXIT_FAILURE); // TODO Change whens add the LOG_CRITICAL / LOG_FATAL
     }
     const auto routeFilter = environment[2];
@@ -112,24 +138,6 @@ void runStart(ConfHandler confManager)
         sigIntHandler.sa_flags = 0;
         sigaction(SIGINT, &sigIntHandler, nullptr);
     }
-
-    // Init logging
-    logging::LoggingConfig logConfig;
-    switch (logLevel)
-    {
-        case 0: logConfig.logLevel = logging::LogLevel::Debug; break;
-        case 1: logConfig.logLevel = logging::LogLevel::Info; break;
-        case 2: logConfig.logLevel = logging::LogLevel::Warn; break;
-        case 3: logConfig.logLevel = logging::LogLevel::Error; break;
-        default: logging::LogLevel::Error;
-    }
-    logConfig.header = "{YmdHMSe} {t} {l}: "; // On debug mode, add the thread id, file, function and line
-    logConfig.filePath = logOutput.c_str();
-    logging::loggingInit(logConfig);
-    g_exitHanlder.add([]() { logging::loggingTerm(); });
-    WAZUH_LOG_INFO("Logging initialized");
-    // WAZUH_LOG_DEBUG("Log output in '{}'", logConfig.filePath);
-    WAZUH_LOG_DEBUG("Logging poll interval '{}'", logConfig.pollInterval);
 
     // Init modules
     std::shared_ptr<store::FileDriver> store;
@@ -149,46 +157,45 @@ void runStart(ConfHandler confManager)
         server =
             std::make_shared<engineserver::EngineServer>(apiEndpoint, nullptr, eventEndpoint, floodFile, bufferSize);
         g_exitHanlder.add([server]() { server->close(); });
-        WAZUH_LOG_DEBUG("Server configured.");
+        LOG_DEBUG("Server configured.");
 
         kvdb = std::make_shared<kvdb_manager::KVDBManager>(kvdbPath);
-        WAZUH_LOG_INFO("KVDB initialized.");
+        LOG_INFO("KVDB initialized.");
         g_exitHanlder.add(
             [kvdb]()
             {
-                WAZUH_LOG_INFO("KVDB terminated.");
+                LOG_INFO("KVDB terminated.");
                 kvdb->clear();
             });
 
         // Register KVDB commands
         api::kvdb::cmds::registerAllCmds(kvdb, server->getRegistry());
-        WAZUH_LOG_DEBUG("KVDB API registered.")
+        LOG_DEBUG("KVDB API registered.");
 
         store = std::make_shared<store::FileDriver>(fileStorage);
-        WAZUH_LOG_INFO("Store initialized.");
+        LOG_INFO("Store initialized.");
 
         base::Name hlpConfigFileName({"schema", "wazuh-logpar-types", "0"});
         auto hlpParsers = store->get(hlpConfigFileName);
         if (std::holds_alternative<base::Error>(hlpParsers))
         {
-            WAZUH_LOG_ERROR("Could not retreive configuration file [{}] needed by the "
-                            "HLP module, error: {}",
-                            hlpConfigFileName.fullName(),
-                            std::get<base::Error>(hlpParsers).message);
+            LOG_ERROR("An error occurred when trying to get the configuration file '{}' needed by the HLP module: {}.",
+                      hlpConfigFileName.fullName(),
+                      std::get<base::Error>(hlpParsers).message);
 
             g_exitHanlder.execute();
             return;
         }
         logpar = std::make_shared<hlp::logpar::Logpar>(std::get<json::Json>(hlpParsers));
         hlp::registerParsers(logpar);
-        WAZUH_LOG_INFO("HLP initialized.");
+        LOG_INFO("HLP initialized.");
 
         auto registry = std::make_shared<builder::internals::Registry>();
         builder::internals::registerBuilders(registry, {0, logpar, kvdb});
-        WAZUH_LOG_DEBUG("Builders registered.");
+        LOG_DEBUG("Builders registered.");
 
         builder = std::make_shared<builder::Builder>(store, registry);
-        WAZUH_LOG_INFO("Builder initialized.");
+        LOG_INFO("Builder initialized.");
 
         api::catalog::Config catalogConfig {
             store,
@@ -197,19 +204,19 @@ void runStart(ConfHandler confManager)
             fmt::format("schema{}wazuh-environment{}0", base::Name::SEPARATOR_S, base::Name::SEPARATOR_S)};
 
         catalog = std::make_shared<api::catalog::Catalog>(catalogConfig);
-        WAZUH_LOG_INFO("Catalog initialized.");
+        LOG_INFO("Catalog initialized.");
 
         api::catalog::cmds::registerAllCmds(catalog, server->getRegistry());
-        WAZUH_LOG_DEBUG("Catalog API registered.")
+        LOG_DEBUG("Catalog API registered.");
 
         router = std::make_shared<router::Router>(builder, store, threads);
         router->run(server->getEventQueue());
         g_exitHanlder.add([router]() { router->stop(); });
-        WAZUH_LOG_INFO("Router initialized.");
+        LOG_INFO("Router initialized.");
 
         // Register the API command
         server->getRegistry()->registerCommand("router", router->apiCallbacks());
-        WAZUH_LOG_DEBUG("Router API registered.")
+        LOG_DEBUG("Router API registered.");
 
         // If the router table is empty or the force flag is passed, load from the command line
         if (router->getRouteTable().empty())
@@ -224,12 +231,12 @@ void runStart(ConfHandler confManager)
 
         // Register Configuration API commands
         api::config::cmds::registerCommands(server->getRegistry(), confManager);
-        WAZUH_LOG_DEBUG("Configuration manager API registered.");
+        LOG_DEBUG("Configuration manager API registered.");
     }
     catch (const std::exception& e)
     {
         const auto msg = utils::getExceptionStack(e);
-        WAZUH_LOG_ERROR("While initializing modules: {}", msg);
+        LOG_ERROR("An error occurred while initializing the modules: {}.", msg);
         g_exitHanlder.execute();
         return;
     }
@@ -241,7 +248,7 @@ void runStart(ConfHandler confManager)
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("While server running: {}.", utils::getExceptionStack(e));
+        LOG_ERROR("An error occurred while running the server: {}.", utils::getExceptionStack(e));
         g_exitHanlder.execute();
         return;
     }

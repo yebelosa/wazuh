@@ -36,13 +36,12 @@ UDPEndpoint::UDPEndpoint(const std::string& config, ServerOutput& eventBuffer)
     m_handle->on<ErrorEvent>(
         [](const ErrorEvent& event, UDPHandle& handle)
         {
-            WAZUH_LOG_ERROR("UDP ErrorEvent: endpoint[{}:{}] error: code=[{}]; "
-                            "name=[{}]; message=[{}]",
-                            handle.sock().ip,
-                            handle.sock().port,
-                            event.code(),
-                            event.name(),
-                            event.what());
+            LOG_ERROR("UDP ErrorEvent: endpoint[{}:{}] error: code=[{}]; name=[{}]; message=[{}]",
+                      handle.sock().ip,
+                      handle.sock().port,
+                      event.code(),
+                      event.name(),
+                      event.what());
         });
 
     m_handle->on<UDPDataEvent>(
@@ -53,13 +52,12 @@ UDPEndpoint::UDPEndpoint(const std::string& config, ServerOutput& eventBuffer)
             client->on<ErrorEvent>(
                 [](const ErrorEvent& event, UDPHandle& client)
                 {
-                    WAZUH_LOG_ERROR("UDP ErrorEvent: endpoint[{}:{}] error: code=[{}]; "
-                                    "name=[{}]; message=[{}]",
-                                    client.peer().ip,
-                                    client.peer().port,
-                                    event.code(),
-                                    event.name(),
-                                    event.what());
+                    LOG_ERROR("UDP ErrorEvent: endpoint[{}:{}] error: code=[{}]; name=[{}]; message=[{}]",
+                              client.peer().ip,
+                              client.peer().port,
+                              event.code(),
+                              event.name(),
+                              event.what());
                 });
 
             const auto result {protocolHandler->process(event.data.get(), event.length)};
@@ -73,9 +71,7 @@ UDPEndpoint::UDPEndpoint(const std::string& config, ServerOutput& eventBuffer)
             }
             else
             {
-                WAZUH_LOG_ERROR("UDP DataEvent: endpoint[{}] error: Data could "
-                                "not be processed.",
-                                m_path);
+                LOG_ERROR("UDP DataEvent: endpoint[{}] error: Data could not be processed.", m_path);
             }
         });
 }

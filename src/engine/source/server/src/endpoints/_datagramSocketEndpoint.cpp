@@ -96,8 +96,7 @@ static inline int bindUnixDatagramSocket(const char* path)
     // Set close-on-exec
     if (-1 == fcntl(socketFd, F_SETFD, FD_CLOEXEC))
     {
-        WAZUH_LOG_ERROR(
-            "Cannot set close-on-exec flag to socket: {} ({})", strerror(errno), errno);
+        LOG_ERROR("Cannot set close-on-exec flag to socket: {} ({})", strerror(errno), errno);
     }
 
     return (socketFd);
@@ -114,12 +113,12 @@ DatagramSocketEndpoint::DatagramSocketEndpoint(const std::string& path,
     m_handle->on<ErrorEvent>(
         [this](const ErrorEvent& event, DatagramSocketHandle& datagramSocketHandle)
         {
-            WAZUH_LOG_ERROR("Datagram Socket ErrorEvent: endpoint[{}] error: code=[{}]; "
-                            "name=[{}]; message=[{}]",
-                            m_path,
-                            event.code(),
-                            event.name(),
-                            event.what());
+            LOG_ERROR("Datagram Socket ErrorEvent: endpoint[{}] error: code=[{}]; "
+                      "name=[{}]; message=[{}]",
+                      m_path,
+                      event.code(),
+                      event.name(),
+                      event.what());
         });
 
     m_handle->on<DatagramSocketEvent>(
@@ -131,13 +130,13 @@ DatagramSocketEndpoint::DatagramSocketEndpoint(const std::string& path,
             client->on<ErrorEvent>(
                 [this](const ErrorEvent& event, DatagramSocketHandle& client)
                 {
-                    WAZUH_LOG_ERROR("Datagram Socket ErrorEvent: endpoint[{}] "
-                                    "error: code=[{}]; "
-                                    "name=[{}]; message=[{}]",
-                                    m_path,
-                                    event.code(),
-                                    event.name(),
-                                    event.what());
+                    LOG_ERROR("Datagram Socket ErrorEvent: endpoint[{}] "
+                              "error: code=[{}]; "
+                              "name=[{}]; message=[{}]",
+                              m_path,
+                              event.code(),
+                              event.name(),
+                              event.what());
                 });
 
             const auto result {protocolHandler->process(event.data.get(), event.length)};
@@ -151,9 +150,9 @@ DatagramSocketEndpoint::DatagramSocketEndpoint(const std::string& path,
             }
             else
             {
-                WAZUH_LOG_ERROR("Datagram Socket DataEvent: endpoint[{}] "
-                                "error: Data could not be processed.",
-                                m_path);
+                LOG_ERROR("Datagram Socket DataEvent: endpoint[{}] "
+                          "error: Data could not be processed.",
+                          m_path);
             }
         });
 
@@ -161,10 +160,7 @@ DatagramSocketEndpoint::DatagramSocketEndpoint(const std::string& path,
 
     if (m_socketFd <= 0)
     {
-        WAZUH_LOG_ERROR("Error while opening Datagram Socket ({}): {} ({})",
-                        m_path,
-                        strerror(errno),
-                        errno);
+        LOG_ERROR("Error while opening Datagram Socket ({}): {} ({})", m_path, strerror(errno), errno);
     }
 }
 
@@ -178,9 +174,7 @@ void DatagramSocketEndpoint::run(void)
     }
     else
     {
-        WAZUH_LOG_ERROR("Datagram Socket ({}) file descriptor is invalid: FD={}.",
-                        m_path,
-                        m_socketFd);
+        LOG_ERROR("Datagram Socket ({}) file descriptor is invalid: FD={}.", m_path, m_socketFd);
     }
 }
 

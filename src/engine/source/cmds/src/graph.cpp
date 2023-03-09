@@ -29,12 +29,11 @@ namespace cmd::graph
 {
 void run(const Options& options)
 {
-    // Init logging
+    // Logging init
     // TODO: add cmd to config logging level
     logging::LoggingConfig logConfig;
-    logConfig.logLevel = logging::LogLevel::Debug;
+    logConfig.logLevel = "warning";
     logging::loggingInit(logConfig);
-    g_exitHanlder.add([]() { logging::loggingTerm(); });
 
     auto kvdb = std::make_shared<kvdb_manager::KVDBManager>(options.kvdbPath);
     g_exitHanlder.add([kvdb]() { kvdb->clear(); });
@@ -44,16 +43,16 @@ void run(const Options& options)
     auto hlpParsers = store->get(hlpConfigFileName);
     if (std::holds_alternative<base::Error>(hlpParsers))
     {
-        WAZUH_LOG_ERROR("Engine \"graph\" command: Configuration file \"{}\" needed by the "
-                        "parsing module could not be obtained: {}",
-                        hlpConfigFileName.fullName(),
-                        std::get<base::Error>(hlpParsers).message);
+        LOG_ERROR(
+            "Engine 'graph' command: Configuration file '{}' needed by the parsing module could not be obtained: {}.",
+            hlpConfigFileName.fullName(),
+            std::get<base::Error>(hlpParsers).message);
         g_exitHanlder.execute();
         return;
     }
     auto logpar = std::make_shared<hlp::logpar::Logpar>(std::get<json::Json>(hlpParsers));
     hlp::registerParsers(logpar);
-    WAZUH_LOG_INFO("HLP initialized");
+    LOG_INFO("HLP initialized.");
     auto registry = std::make_shared<builder::internals::Registry>();
     try
     {
@@ -61,9 +60,8 @@ void run(const Options& options)
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Engine \"graph\" command: An error occurred while registering "
-                        "the builders: {}",
-                        utils::getExceptionStack(e));
+        LOG_ERROR("Engine 'graph' command: An error occurred while registering the builders: {}.",
+                  utils::getExceptionStack(e));
         g_exitHanlder.execute();
         return;
     }
@@ -76,9 +74,8 @@ void run(const Options& options)
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Engine \"graph\" command: An error occurred while building the "
-                        "environment: \"{}\"",
-                        utils::getExceptionStack(e));
+        LOG_ERROR("Engine 'graph' command: An error occurred while building the environment: {}.",
+                  utils::getExceptionStack(e));
         g_exitHanlder.execute();
         return;
     }
@@ -90,9 +87,8 @@ void run(const Options& options)
     }
     catch (const std::exception& e)
     {
-        WAZUH_LOG_ERROR("Engine \"graph\" command: An error occurred while building the "
-                        "environment expression: {}",
-                        utils::getExceptionStack(e));
+        LOG_ERROR("Engine 'graph' command: An error occurred while building the environment expression: {}.",
+                  utils::getExceptionStack(e));
         g_exitHanlder.execute();
         return;
     }
