@@ -32,7 +32,7 @@ void run(const Options& options)
     // Logging init
     // TODO: add cmd to config logging level
     logging::LoggingConfig logConfig;
-    logConfig.logLevel = "warning";
+    logConfig.logLevel = spdlog::level::info;
     logging::loggingInit(logConfig);
 
     auto kvdb = std::make_shared<kvdb_manager::KVDBManager>(options.kvdbPath);

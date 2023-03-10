@@ -52,8 +52,8 @@ TEST(wdb_connector, connectManyTimes)
     ASSERT_GT(serverSocketFD, 0);
 
     // Disable warning logs for this test
-    const auto logLevel {fmtlog::getLogLevel()};
-    fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Error));
+    const auto logLevel {logging::getDefaultLogger()->level()};
+    logging::getDefaultLogger()->set_level(spdlog::level::err);
 
     auto wdb {WazuhDB(TEST_STREAM_SOCK_PATH)};
     ASSERT_NO_THROW(wdb.connect());
@@ -66,7 +66,8 @@ TEST(wdb_connector, connectManyTimes)
     const int clientRemoteIII {testAcceptConnection(serverSocketFD)};
     ASSERT_GT(clientRemoteIII, 0);
 
-    fmtlog::setLogLevel(fmtlog::LogLevel(logLevel)); // Restore log level
+    // Restore log level
+    logging::getDefaultLogger()->set_level(logLevel);
 
     close(serverSocketFD);
     close(clientRemoteI);
@@ -79,12 +80,13 @@ TEST(wdb_query, EmptyString)
     auto wdb {WazuhDB()};
 
     // Disable warning logs for this test
-    const auto logLevel {fmtlog::getLogLevel()};
-    fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Error));
+    const auto logLevel {logging::getDefaultLogger()->level()};
+    logging::getDefaultLogger()->set_level(spdlog::level::err);
 
     ASSERT_STREQ(wdb.query("").c_str(), "");
 
-    fmtlog::setLogLevel(fmtlog::LogLevel(logLevel)); // Restore log level
+    // Restore log level
+    logging::getDefaultLogger()->set_level(logLevel);
 }
 
 TEST(wdb_query, TooLongString)
@@ -98,12 +100,13 @@ TEST(wdb_query, TooLongString)
     msg.back() = '\0';
 
     // Disable warning logs for this test
-    const auto logLevel {fmtlog::getLogLevel()};
-    fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Error));
+    const auto logLevel {logging::getDefaultLogger()->level()};
+    logging::getDefaultLogger()->set_level(spdlog::level::err);
 
     ASSERT_STREQ(wdb.query(msg.data()).c_str(), "");
 
-    fmtlog::setLogLevel(fmtlog::LogLevel(logLevel)); // Restore log level
+    // Restore log level
+    logging::getDefaultLogger()->set_level(logLevel);
 }
 
 TEST(wdb_query, ConnectAndQuery)
@@ -215,13 +218,14 @@ TEST(wdb_tryQuery, SendQueryOK_retry)
             close(clientRemoteRetry);
         });
 
-    // Disable logs for this test
-    const auto logLevel {fmtlog::getLogLevel()};
-    fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Error));
+    // Disable warning logs for this test
+    const auto logLevel {logging::getDefaultLogger()->level()};
+    logging::getDefaultLogger()->set_level(spdlog::level::err);
 
     ASSERT_STREQ(wdb.tryQuery(TEST_MESSAGE, 5).c_str(), TEST_RESPONSE);
 
-    fmtlog::setLogLevel(fmtlog::LogLevel(logLevel)); // Restore log level
+    // Restore log level
+    logging::getDefaultLogger()->set_level(logLevel);
 
     t.join();
     close(serverSocketFD);
@@ -245,13 +249,14 @@ TEST(wdb_tryQuery, SendQueryIrrecoverable)
         });
 
     // Disable logs for this test
-    const auto logLevel {fmtlog::getLogLevel()};
-    fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Off));
+    const auto logLevel {logging::getDefaultLogger()->level()};
+    logging::getDefaultLogger()->set_level(spdlog::level::off);
 
     // Empty string on error
     ASSERT_STREQ(wdb.tryQuery(TEST_MESSAGE, 5).c_str(), "");
 
-    fmtlog::setLogLevel(fmtlog::LogLevel(logLevel)); // Restore log level
+    // Restore log level
+    logging::getDefaultLogger()->set_level(logLevel);
 
     t.join();
 }
@@ -355,12 +360,13 @@ TEST(wdb_parseResult, ParseResultUnknown)
     WazuhDB wdb {};
 
     // Disable logs for this test
-    const auto logLevel {fmtlog::getLogLevel()};
-    fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Off));
+    const auto logLevel {logging::getDefaultLogger()->level()};
+    logging::getDefaultLogger()->set_level(spdlog::level::off);
 
     auto retval {wdb.parseResult(message)};
 
-    fmtlog::setLogLevel(fmtlog::LogLevel(logLevel)); // Restore log level
+    // Restore log level
+    logging::getDefaultLogger()->set_level(logLevel);
 
     ASSERT_EQ(std::get<0>(retval), QueryResultCodes::UNKNOWN);
     ASSERT_FALSE(std::get<1>(retval));
@@ -373,15 +379,16 @@ TEST(wdb_parseResult, ParseResultUnknownWithPayload)
     WazuhDB wdb {};
 
     // Disable logs for this test
-    const auto logLevel {fmtlog::getLogLevel()};
-    fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Off));
+    const auto logLevel {logging::getDefaultLogger()->level()};
+    logging::getDefaultLogger()->set_level(spdlog::level::off);
 
     auto retval {wdb.parseResult(message)};
 
     ASSERT_EQ(std::get<0>(retval), QueryResultCodes::UNKNOWN);
     ASSERT_FALSE(std::get<1>(retval));
 
-    fmtlog::setLogLevel(fmtlog::LogLevel(logLevel)); // Restore log level
+    // Restore log level
+    logging::getDefaultLogger()->set_level(logLevel);
 }
 
 TEST(wdb_tryQueryAndParseResult, SendQueryOK_firstAttemp_wopayload)
@@ -429,15 +436,16 @@ TEST(wdb_tryQueryAndParseResult, SendQueryOK_retry_wpayload)
             close(clientRemoteRetry);
         });
 
-    // Disable logs for this test
-    const auto logLevel {fmtlog::getLogLevel()};
-    fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Error));
+    // Disable warning logs for this test
+    const auto logLevel {logging::getDefaultLogger()->level()};
+    logging::getDefaultLogger()->set_level(spdlog::level::err);
 
     auto retval {wdb.tryQueryAndParseResult(TEST_MESSAGE, 5)};
     ASSERT_EQ(std::get<0>(retval), QueryResultCodes::OK);
     ASSERT_STREQ(std::get<1>(retval).value().c_str(), "payload");
 
-    fmtlog::setLogLevel(fmtlog::LogLevel(logLevel)); // Restore log level
+    // Restore log level
+    logging::getDefaultLogger()->set_level(logLevel);
 
     t.join();
     close(serverSocketFD);
@@ -462,15 +470,16 @@ TEST(wdb_tryQueryAndParseResult, SendQueryIrrecoverable)
         });
 
     // Disable logs for this test
-    const auto logLevel {fmtlog::getLogLevel()};
-    fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Off));
+    const auto logLevel {logging::getDefaultLogger()->level()};
+    logging::getDefaultLogger()->set_level(spdlog::level::off);
 
     // Empty string on error
     auto retval {wdb.tryQueryAndParseResult(TEST_MESSAGE, 5)};
     ASSERT_EQ(std::get<0>(retval), QueryResultCodes::UNKNOWN);
     ASSERT_FALSE(std::get<1>(retval));
 
-    fmtlog::setLogLevel(fmtlog::LogLevel(logLevel)); // Restore log level
+    // Restore log level
+    logging::getDefaultLogger()->set_level(logLevel);
 
     t.join();
 }

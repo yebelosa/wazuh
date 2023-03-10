@@ -89,7 +89,7 @@ protected:
 
     virtual void SetUp()
     {
-        fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Off));
+        logging::getDefaultLogger()->set_level(spdlog::level::off);
         if (std::filesystem::exists(DB_DIR))
         {
             std::filesystem::remove_all(DB_DIR);
@@ -361,7 +361,7 @@ protected:
 
     virtual void SetUp()
     {
-        fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Off));
+        logging::getDefaultLogger()->set_level(spdlog::level::off);
         if (std::filesystem::exists(DB_DIR))
         {
             std::filesystem::remove_all(DB_DIR);
@@ -525,7 +525,7 @@ protected:
 
     virtual void SetUp()
     {
-        fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Off));
+        logging::getDefaultLogger()->set_level(spdlog::level::off);
         if (std::filesystem::exists(DB_DIR))
         {
             std::filesystem::remove_all(DB_DIR);
@@ -798,7 +798,7 @@ protected:
 
     virtual void SetUp()
     {
-        fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Off));
+        logging::getDefaultLogger()->set_level(spdlog::level::off);
         if (std::filesystem::exists(DB_DIR))
         {
             std::filesystem::remove_all(DB_DIR);
@@ -967,7 +967,7 @@ protected:
 
     virtual void SetUp()
     {
-        fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Off));
+        logging::getDefaultLogger()->set_level(spdlog::level::off);
         if (std::filesystem::exists(DB_DIR))
         {
             std::filesystem::remove_all(DB_DIR);
@@ -1236,7 +1236,7 @@ protected:
 
     virtual void SetUp()
     {
-        fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Off));
+        logging::getDefaultLogger()->set_level(spdlog::level::off);
         if (std::filesystem::exists(DB_DIR))
         {
             std::filesystem::remove_all(DB_DIR);
@@ -1374,7 +1374,7 @@ protected:
 
     virtual void SetUp()
     {
-        fmtlog::setLogLevel(fmtlog::LogLevel(logging::LogLevel::Off));
+        logging::getDefaultLogger()->set_level(spdlog::level::off);
         if (std::filesystem::exists(DB_DIR))
         {
             std::filesystem::remove_all(DB_DIR);
